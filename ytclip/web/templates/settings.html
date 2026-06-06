@@ -1,0 +1,254 @@
+{% extends "base.html" %}
+{% block title %}Settings · ytclip{% endblock %}
+
+{% block content %}
+<div class="settings-page">
+
+  <div class="settings-header">
+    <h1 class="settings-title">Settings</h1>
+  </div>
+
+  {% if flash_connected %}
+  <div class="settings-flash settings-flash-ok">
+    <i class="fa-solid fa-circle-check"></i>
+    Connected to {{ flash_connected | title }} successfully.
+  </div>
+  {% endif %}
+  {% if flash_error %}
+  <div class="settings-flash settings-flash-err">
+    <i class="fa-solid fa-circle-xmark"></i>
+    {{ flash_error }}
+  </div>
+  {% endif %}
+
+  <!-- ── Platform Connections ─────────────────────────────────────── -->
+  <section class="settings-section">
+    <div class="settings-section-header">
+      <h2 class="settings-section-title">
+        <i class="fa-solid fa-share-nodes"></i> Platform Publishing
+      </h2>
+      <p class="settings-section-desc">
+        Connect accounts to publish clips directly. Add <code>client_id</code> and <code>client_secret</code>
+        under <code>[platforms.&lt;name&gt;]</code> in your <code>config.toml</code> to enable a platform.
+      </p>
+    </div>
+    <div class="platform-grid">
+      {% for p in platforms %}
+      <div class="platform-card" style="--brand: {{ p.color }}">
+        <div class="platform-card-top">
+          <i class="{{ p.icon }} platform-icon"></i>
+          <span class="platform-name">{{ p.display_name }}</span>
+          {% if p.connected %}
+          <span class="platform-badge platform-badge-connected">Connected</span>
+          {% elif p.configured %}
+          <span class="platform-badge platform-badge-ready">Ready</span>
+          {% else %}
+          <span class="platform-badge platform-badge-off">Not configured</span>
+          {% endif %}
+        </div>
+
+        {% if p.connected %}
+        <div class="platform-user">
+          {% if p.user_avatar %}
+          <img src="{{ p.user_avatar }}" class="platform-avatar" alt="">
+          {% else %}
+          <span class="platform-avatar-placeholder"><i class="{{ p.icon }}"></i></span>
+          {% endif %}
+          <span class="platform-handle">{{ p.user_handle or "Connected" }}</span>
+        </div>
+        {% elif not p.configured %}
+        <p class="platform-unconfigured">Add credentials to config.toml to enable.</p>
+        {% endif %}
+
+        <div class="platform-card-footer">
+          {% if p.connected %}
+          <button class="btn-disconnect"
+                  onclick="disconnectPlatform('{{ p.name }}')">
+            <i class="fa-solid fa-link-slash"></i> Disconnect
+          </button>
+          {% elif p.configured %}
+          <a class="btn-connect" href="/publish/connect/{{ p.name }}">
+            <i class="fa-solid fa-link"></i> Connect
+          </a>
+          {% else %}
+          <button class="btn-connect" disabled>Not configured</button>
+          {% endif %}
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </section>
+
+  <!-- ── Brand Kits ──────────────────────────────────────────────── -->
+  <section class="settings-section" id="brand-kits">
+    <div class="settings-section-header">
+      <h2 class="settings-section-title">
+        <i class="fa-solid fa-palette"></i> Brand Kits
+      </h2>
+      <p class="settings-section-desc">
+        Save watermark, subtitle, and format settings as named profiles. Apply a kit in the Clip editor with one click.
+      </p>
+      <button class="btn-new-kit" id="btn-new-kit" onclick="toggleKitForm()">
+        <i class="fa-solid fa-plus"></i> New Brand Kit
+      </button>
+    </div>
+
+    <!-- Create form -->
+    <form id="kit-form" class="kit-form" style="display:none"
+          action="/brand-kits" method="post" enctype="multipart/form-data">
+      <div class="kit-form-grid">
+        <div class="kit-field">
+          <label class="kit-label">Kit Name *</label>
+          <input class="kit-input" name="name" required placeholder="e.g. My Brand" maxlength="40">
+        </div>
+        <div class="kit-field">
+          <label class="kit-label">Logo / Watermark</label>
+          <label class="kit-file-label" for="kit-logo-input">
+            <i class="fa-solid fa-upload"></i>
+            <span id="kit-logo-name">Choose image…</span>
+          </label>
+          <input type="file" id="kit-logo-input" name="logo"
+                 accept="image/png,image/webp,image/jpeg" class="sr-only">
+        </div>
+        <div class="kit-field">
+          <label class="kit-label">Default Format</label>
+          <select class="kit-select" name="default_format">
+            <option value="mp4">MP4</option>
+            <option value="mkv">MKV</option>
+            <option value="mp3">MP3</option>
+            <option value="gif">GIF</option>
+          </select>
+        </div>
+        <div class="kit-field">
+          <label class="kit-label">Watermark Position</label>
+          <select class="kit-select" name="watermark_position">
+            <option value="br">Bottom Right</option>
+            <option value="bl">Bottom Left</option>
+            <option value="tr">Top Right</option>
+            <option value="tl">Top Left</option>
+          </select>
+        </div>
+        <div class="kit-field">
+          <label class="kit-label">Subtitle Color</label>
+          <div class="kit-color-row">
+            {% for hex, label in [('#ffffff','White'),('#ffff00','Yellow'),('#000000','Black'),('#00ff00','Green')] %}
+            <button type="button" class="kit-color-btn {% if hex == '#ffffff' %}active{% endif %}"
+                    data-color="{{ hex }}" style="background:{{ hex }}"
+                    title="{{ label }}" onclick="pickKitColor(this)"></button>
+            {% endfor %}
+            <input type="hidden" name="subtitle_color" id="kit-sub-color" value="#ffffff">
+          </div>
+        </div>
+        <div class="kit-field">
+          <label class="kit-label">Subtitle Size</label>
+          <div class="kit-size-row">
+            {% for sz in [16,20,24,28,36] %}
+            <button type="button" class="kit-size-btn {% if sz == 24 %}active{% endif %}"
+                    data-size="{{ sz }}" onclick="pickKitSize(this)">{{ sz }}</button>
+            {% endfor %}
+            <input type="hidden" name="subtitle_font_size" id="kit-sub-size" value="24">
+          </div>
+        </div>
+        <div class="kit-field">
+          <label class="kit-label">Subtitle BG</label>
+          <div class="kit-bg-row">
+            {% for val, label in [('none','None'),('shadow','Shadow'),('box','Box')] %}
+            <button type="button" class="kit-bg-btn {% if val == 'shadow' %}active{% endif %}"
+                    data-bg="{{ val }}" onclick="pickKitBg(this)">{{ label }}</button>
+            {% endfor %}
+            <input type="hidden" name="subtitle_bg" id="kit-sub-bg" value="shadow">
+          </div>
+        </div>
+        <div class="kit-field">
+          <label class="kit-label">Output Subfolder</label>
+          <input class="kit-input" name="output_subfolder" placeholder="e.g. BrandName (optional)" maxlength="60">
+        </div>
+      </div>
+      <div class="kit-form-actions">
+        <button type="submit" class="btn-save-kit">
+          <i class="fa-solid fa-check"></i> Save Kit
+        </button>
+        <button type="button" class="btn-cancel-kit" onclick="toggleKitForm()">Cancel</button>
+      </div>
+    </form>
+
+    <!-- Existing kits -->
+    <div class="brand-kit-grid" id="brand-kit-grid">
+      {% if not brand_kits %}
+      <p class="kits-empty">No brand kits yet. Create one above.</p>
+      {% else %}
+      {% for kit in brand_kits %}
+      <div class="brand-kit-card" id="kit-{{ kit.id }}">
+        <div class="brand-kit-card-top">
+          {% if kit.logo_path %}
+          <img src="/brand-kits/{{ kit.id }}/logo" class="brand-kit-logo" alt="">
+          {% else %}
+          <span class="brand-kit-logo-placeholder"><i class="fa-solid fa-palette"></i></span>
+          {% endif %}
+          <span class="brand-kit-name">{{ kit.name }}</span>
+          <button class="brand-kit-del" title="Delete"
+                  onclick="deleteKit('{{ kit.id }}')">
+            <i class="fa-solid fa-xmark"></i>
+          </button>
+        </div>
+        <div class="brand-kit-meta">
+          <span class="brand-kit-tag">{{ kit.default_format.upper() }}</span>
+          <span class="brand-kit-tag" style="background:{{ kit.subtitle_color }};color:{% if kit.subtitle_color == '#000000' %}#fff{% else %}#000{% endif %}">
+            {{ kit.subtitle_color }}
+          </span>
+          <span class="brand-kit-tag">{{ kit.subtitle_font_size }}px</span>
+        </div>
+      </div>
+      {% endfor %}
+      {% endif %}
+    </div>
+  </section>
+
+</div>
+
+<script>
+function toggleKitForm() {
+  var f = document.getElementById('kit-form');
+  var btn = document.getElementById('btn-new-kit');
+  var show = f.style.display === 'none';
+  f.style.display = show ? 'block' : 'none';
+  btn.style.display = show ? 'none' : '';
+}
+
+function pickKitColor(btn) {
+  document.querySelectorAll('.kit-color-btn').forEach(function(b) { b.classList.remove('active'); });
+  btn.classList.add('active');
+  document.getElementById('kit-sub-color').value = btn.dataset.color;
+}
+
+function pickKitSize(btn) {
+  document.querySelectorAll('.kit-size-btn').forEach(function(b) { b.classList.remove('active'); });
+  btn.classList.add('active');
+  document.getElementById('kit-sub-size').value = btn.dataset.size;
+}
+
+function pickKitBg(btn) {
+  document.querySelectorAll('.kit-bg-btn').forEach(function(b) { b.classList.remove('active'); });
+  btn.classList.add('active');
+  document.getElementById('kit-sub-bg').value = btn.dataset.bg;
+}
+
+document.getElementById('kit-logo-input').addEventListener('change', function() {
+  var el = document.getElementById('kit-logo-name');
+  el.textContent = this.files[0] ? this.files[0].name : 'Choose image…';
+});
+
+async function deleteKit(id) {
+  if (!confirm('Delete this brand kit?')) return;
+  await fetch('/brand-kits/' + id, { method: 'DELETE' });
+  var el = document.getElementById('kit-' + id);
+  if (el) el.remove();
+}
+
+async function disconnectPlatform(platform) {
+  if (!confirm('Disconnect from ' + platform + '?')) return;
+  await fetch('/publish/disconnect/' + platform, { method: 'DELETE' });
+  location.reload();
+}
+</script>
+{% endblock %}

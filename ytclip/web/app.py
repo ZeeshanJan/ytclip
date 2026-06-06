@@ -16,9 +16,12 @@ from ..database import init_db
 from ..jobs import init_job_runner, get_job_runner
 from ..updater import maybe_update_ytdlp
 from .auth import make_login_router, require_auth
+from .routes.brand_kits import router as brand_kits_router
 from .routes.clips import router as clips_router
 from .routes.library import router as library_router
 from .routes.presets import router as presets_router
+from .routes.publish import router as publish_router
+from .routes.settings import router as settings_router
 from .routes.share import router as share_router
 from .routes.video import router as video_router
 from .routes.watermarks import router as watermarks_router
@@ -88,6 +91,9 @@ def create_app(config: Config | None = None) -> FastAPI:
     app.include_router(library_router, dependencies=dependencies)
     app.include_router(presets_router, dependencies=dependencies)
     app.include_router(watermarks_router, dependencies=dependencies)
+    app.include_router(brand_kits_router, dependencies=dependencies)
+    app.include_router(publish_router, dependencies=dependencies)
+    app.include_router(settings_router, dependencies=dependencies)
     # share routes are always public (no auth dependency)
     app.include_router(share_router)
 

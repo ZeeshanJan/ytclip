@@ -19,20 +19,141 @@
     var el = document.getElementById('progress-' + id);
     if (el) el.innerHTML = e.data;
     if (e.data.indexOf('job-done') !== -1 || e.data.indexOf('job-error') !== -1) {
-      // inject share button after download button
-      var done = el.querySelector('.job-done');
-      if (done && !done.querySelector('.job-share-btn')) {
-        var shareBtn = document.createElement('a');
-        shareBtn.className = 'job-share-btn';
-        shareBtn.href = '/share/' + id;
-        shareBtn.target = '_blank';
-        shareBtn.title = 'Share';
-        shareBtn.innerHTML = '<i class="fa-solid fa-share-nodes"></i>';
-        done.appendChild(shareBtn);
+      var done = el ? el.querySelector('.job-done') : null;
+      if (done) {
+        // Share button
+        if (!done.querySelector('.job-share-btn')) {
+          var shareBtn = document.createElement('a');
+          shareBtn.className = 'job-share-btn';
+          shareBtn.href = '/share/' + id;
+          shareBtn.target = '_blank';
+          shareBtn.title = 'Share';
+          shareBtn.innerHTML = '<i class="fa-solid fa-share-nodes"></i>';
+          done.appendChild(shareBtn);
+        }
+        // Publish buttons (fetched async)
+        _addPublishRow(id, el);
       }
       es.close();
     }
   };
   es.onerror = function () { es.close(); };
+
+  function _addPublishRow(jobId, container) {
+    fetch('/publish/connections')
+      .then(function(r) { return r.json(); })
+      .then(function(platforms) {
+        var connected = platforms.filter(function(p) { return p.connected; });
+        if (!connected.length) return;
+        var row = document.createElement('div');
+        row.className = 'publish-row';
+        row.id = 'publish-row-' + jobId;
+        row.innerHTML = '<span class="publish-row-label">Publish to</span>';
+        connected.forEach(function(p) {
+          var btn = document.createElement('button');
+          btn.type = 'button';
+          btn.className = 'publish-btn';
+          btn.title = p.display_name;
+          btn.style.setProperty('--brand', p.color);
+          btn.setAttribute('data-platform', p.name);
+          btn.innerHTML = '<i class="' + p.icon + '"></i>';
+          btn.addEventListener('click', function() { _openPublishModal(jobId, p); });
+          row.appendChild(btn);
+        });
+        container.appendChild(row);
+      })
+      .catch(function() {});
+  }
+
+  function _openPublishModal(jobId, platform) {
+    var existing = document.getElementById('publish-modal');
+    if (existing) existing.remove();
+
+    var modal = document.createElement('dialog');
+    modal.id = 'publish-modal';
+    modal.className = 'publish-modal';
+    modal.innerHTML =
+      '<form class="publish-modal-form" method="dialog">' +
+        '<div class="publish-modal-header">' +
+          '<i class="' + platform.icon + '" style="color:' + platform.color + ';font-size:1.4rem"></i>' +
+          '<span>Publish to ' + platform.display_name + '</span>' +
+          '<button type="button" class="publish-modal-close" onclick="document.getElementById(\'publish-modal\').close()">' +
+            '<i class="fa-solid fa-xmark"></i>' +
+          '</button>' +
+        '</div>' +
+        '<label class="publish-field-label">Title</label>' +
+        '<input class="publish-field-input" id="pm-title" placeholder="Clip title…" maxlength="200">' +
+        '<label class="publish-field-label">Description</label>' +
+        '<textarea class="publish-field-input publish-field-textarea" id="pm-desc" placeholder="Optional caption…" rows="3" maxlength="500"></textarea>' +
+        '<label class="publish-field-label">Privacy</label>' +
+        '<select class="publish-field-input" id="pm-privacy">' +
+          '<option value="public">Public</option>' +
+          '<option value="private">Private</option>' +
+        '</select>' +
+        '<div class="publish-modal-actions">' +
+          '<button type="button" class="btn-publish-submit" id="pm-submit">Publish</button>' +
+          '<button type="button" class="btn-publish-cancel" onclick="document.getElementById(\'publish-modal\').close()">Cancel</button>' +
+        '</div>' +
+        '<div class="publish-modal-status" id="pm-status" style="display:none"></div>' +
+      '</form>';
+    document.body.appendChild(modal);
+    modal.showModal();
+
+    document.getElementById('pm-submit').addEventListener('click', function() {
+      var title = document.getElementById('pm-title').value.trim();
+      var desc  = document.getElementById('pm-desc').value.trim();
+      var priv  = document.getElementById('pm-privacy').value;
+      var statusEl = document.getElementById('pm-status');
+      var submitBtn = document.getElementById('pm-submit');
+
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Publishing…';
+      statusEl.style.display = '';
+      statusEl.className = 'publish-modal-status publish-status-uploading';
+      statusEl.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Uploading…';
+
+      var params = new URLSearchParams({ title: title, description: desc, privacy: priv });
+      fetch('/publish/' + jobId + '/' + platform.name + '?' + params, { method: 'POST' })
+        .then(function(r) { return r.json(); })
+        .then(function(log) {
+          _pollPublishStatus(log.id, jobId, platform.name, statusEl);
+        })
+        .catch(function(err) {
+          statusEl.className = 'publish-modal-status publish-status-error';
+          statusEl.innerHTML = '<i class="fa-solid fa-xmark"></i> ' + (err.message || 'Error');
+          submitBtn.disabled = false;
+          submitBtn.textContent = 'Retry';
+        });
+    });
+  }
+
+  function _pollPublishStatus(logId, jobId, platform, statusEl) {
+    var interval = setInterval(function() {
+      fetch('/publish/log/' + jobId)
+        .then(function(r) { return r.json(); })
+        .then(function(logs) {
+          var log = logs.find(function(l) { return l.id === logId; });
+          if (!log) return;
+          if (log.status === 'published') {
+            clearInterval(interval);
+            statusEl.className = 'publish-modal-status publish-status-ok';
+            var link = log.platform_url
+              ? '<a href="' + log.platform_url + '" target="_blank" class="publish-link">View post <i class="fa-solid fa-arrow-up-right-from-square"></i></a>'
+              : 'Published!';
+            statusEl.innerHTML = '<i class="fa-solid fa-check"></i> ' + link;
+            // Update the publish button in the job row
+            var btn = document.querySelector('[data-platform="' + platform + '"]');
+            if (btn) btn.classList.add('publish-btn-done');
+          } else if (log.status === 'failed') {
+            clearInterval(interval);
+            statusEl.className = 'publish-modal-status publish-status-error';
+            statusEl.innerHTML = '<i class="fa-solid fa-xmark"></i> ' + (log.error || 'Failed');
+            document.getElementById('pm-submit').disabled = false;
+            document.getElementById('pm-submit').textContent = 'Retry';
+          }
+        })
+        .catch(function() {});
+    }, 3000);
+  }
 })();
 </script>

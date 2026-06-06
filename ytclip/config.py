@@ -56,6 +56,20 @@ class ServerConfig:
 
 
 @dataclass
+class PlatformConfig:
+    client_id: str = ""
+    client_secret: str = ""
+
+
+@dataclass
+class PlatformsConfig:
+    youtube: PlatformConfig = field(default_factory=PlatformConfig)
+    instagram: PlatformConfig = field(default_factory=PlatformConfig)
+    tiktok: PlatformConfig = field(default_factory=PlatformConfig)
+    linkedin: PlatformConfig = field(default_factory=PlatformConfig)
+
+
+@dataclass
 class Config:
     general: GeneralConfig = field(default_factory=GeneralConfig)
     quality: QualityConfig = field(default_factory=QualityConfig)
@@ -63,6 +77,8 @@ class Config:
     auth: AuthConfig = field(default_factory=AuthConfig)
     ytdlp: YtdlpConfig = field(default_factory=YtdlpConfig)
     server: ServerConfig = field(default_factory=ServerConfig)
+    platforms: PlatformsConfig = field(default_factory=PlatformsConfig)
+    public_url: str = "http://localhost:8000"
 
     @property
     def data_dir(self) -> Path:
@@ -106,6 +122,15 @@ def _parse_config(raw: dict) -> Config:
     if s := raw.get("server"):
         cfg.server.host = s.get("host", cfg.server.host)
         cfg.server.port = int(s.get("port", cfg.server.port))
+
+    cfg.public_url = raw.get("public_url", cfg.public_url).rstrip("/")
+
+    if p := raw.get("platforms"):
+        for name in ("youtube", "instagram", "tiktok", "linkedin"):
+            if pc := p.get(name):
+                platform_cfg = getattr(cfg.platforms, name)
+                platform_cfg.client_id = pc.get("client_id", "")
+                platform_cfg.client_secret = pc.get("client_secret", "")
 
     return cfg
 

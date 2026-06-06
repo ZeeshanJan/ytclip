@@ -48,12 +48,58 @@ CREATE TABLE IF NOT EXISTS presets (
 )
 """
 
+_CREATE_PLATFORM_CONNECTIONS_TABLE = """
+CREATE TABLE IF NOT EXISTS platform_connections (
+    platform TEXT PRIMARY KEY,
+    access_token TEXT NOT NULL,
+    refresh_token TEXT,
+    expires_at TEXT,
+    user_handle TEXT,
+    user_avatar TEXT,
+    extra TEXT,
+    connected_at TEXT NOT NULL
+)
+"""
+
+_CREATE_PUBLISH_LOG_TABLE = """
+CREATE TABLE IF NOT EXISTS publish_log (
+    id TEXT PRIMARY KEY,
+    job_id TEXT NOT NULL,
+    platform TEXT NOT NULL,
+    status TEXT NOT NULL DEFAULT 'pending',
+    platform_post_id TEXT,
+    platform_url TEXT,
+    error TEXT,
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL
+)
+"""
+
+_CREATE_BRAND_KITS_TABLE = """
+CREATE TABLE IF NOT EXISTS brand_kits (
+    id TEXT PRIMARY KEY,
+    name TEXT NOT NULL UNIQUE,
+    logo_path TEXT,
+    watermark_position TEXT NOT NULL DEFAULT 'br',
+    subtitle_font_size INTEGER NOT NULL DEFAULT 24,
+    subtitle_color TEXT NOT NULL DEFAULT '#ffffff',
+    subtitle_bg TEXT NOT NULL DEFAULT 'shadow',
+    subtitle_position TEXT NOT NULL DEFAULT 'bottom',
+    default_format TEXT NOT NULL DEFAULT 'mp4',
+    output_subfolder TEXT NOT NULL DEFAULT '',
+    created_at TEXT NOT NULL
+)
+"""
+
 
 async def init_db(db_path: Path) -> None:
     async with aiosqlite.connect(db_path) as db:
         await db.execute(_CREATE_JOBS_TABLE)
         await db.execute(_CREATE_WATERMARK_HISTORY_TABLE)
         await db.execute(_CREATE_PRESETS_TABLE)
+        await db.execute(_CREATE_PLATFORM_CONNECTIONS_TABLE)
+        await db.execute(_CREATE_PUBLISH_LOG_TABLE)
+        await db.execute(_CREATE_BRAND_KITS_TABLE)
         await db.commit()
 
 
@@ -262,5 +308,181 @@ async def save_preset(db_path: Path, name: str, settings: dict) -> dict:
 async def delete_preset(db_path: Path, preset_id: str) -> bool:
     async with aiosqlite.connect(db_path) as db:
         cursor = await db.execute("DELETE FROM presets WHERE id=?", (preset_id,))
+        await db.commit()
+        return cursor.rowcount > 0
+
+
+# ── Platform connections ──────────────────────────────────────────────────────
+
+def _row_to_connection(row) -> dict:
+    return {
+        "platform": row[0],
+        "access_token": row[1],
+        "refresh_token": row[2],
+        "expires_at": row[3],
+        "user_handle": row[4],
+        "user_avatar": row[5],
+        "extra": json.loads(row[6]) if row[6] else {},
+        "connected_at": row[7],
+    }
+
+
+async def list_platform_connections(db_path: Path) -> list[dict]:
+    async with aiosqlite.connect(db_path) as db:
+        async with db.execute(
+            "SELECT platform, access_token, refresh_token, expires_at, user_handle, user_avatar, extra, connected_at FROM platform_connections"
+        ) as cur:
+            return [_row_to_connection(r) for r in await cur.fetchall()]
+
+
+async def get_platform_connection(db_path: Path, platform: str) -> dict | None:
+    async with aiosqlite.connect(db_path) as db:
+        async with db.execute(
+            "SELECT platform, access_token, refresh_token, expires_at, user_handle, user_avatar, extra, connected_at FROM platform_connections WHERE platform=?",
+            (platform,),
+        ) as cur:
+            row = await cur.fetchone()
+            return _row_to_connection(row) if row else None
+
+
+async def save_platform_connection(
+    db_path: Path,
+    platform: str,
+    access_token: str,
+    refresh_token: str = "",
+    expires_at: str = "",
+    user_handle: str = "",
+    user_avatar: str = "",
+    extra: dict | None = None,
+) -> None:
+    now = datetime.now(timezone.utc).isoformat()
+    async with aiosqlite.connect(db_path) as db:
+        await db.execute(
+            """INSERT OR REPLACE INTO platform_connections
+               (platform, access_token, refresh_token, expires_at, user_handle, user_avatar, extra, connected_at)
+               VALUES (?,?,?,?,?,?,?,?)""",
+            (platform, access_token, refresh_token or "", expires_at or "", user_handle or "", user_avatar or "", json.dumps(extra or {}), now),
+        )
+        await db.commit()
+
+
+async def delete_platform_connection(db_path: Path, platform: str) -> bool:
+    async with aiosqlite.connect(db_path) as db:
+        cursor = await db.execute("DELETE FROM platform_connections WHERE platform=?", (platform,))
+        await db.commit()
+        return cursor.rowcount > 0
+
+
+# ── Publish log ───────────────────────────────────────────────────────────────
+
+async def create_publish_log(db_path: Path, job_id: str, platform: str) -> dict:
+    now = datetime.now(timezone.utc).isoformat()
+    log_id = str(uuid.uuid4())
+    async with aiosqlite.connect(db_path) as db:
+        await db.execute(
+            "INSERT INTO publish_log (id, job_id, platform, status, created_at, updated_at) VALUES (?,?,?,?,?,?)",
+            (log_id, job_id, platform, "pending", now, now),
+        )
+        await db.commit()
+    return {"id": log_id, "job_id": job_id, "platform": platform, "status": "pending", "platform_url": None, "error": None, "created_at": now}
+
+
+async def update_publish_log(
+    db_path: Path,
+    log_id: str,
+    status: str,
+    platform_url: str | None = None,
+    error: str | None = None,
+) -> None:
+    now = datetime.now(timezone.utc).isoformat()
+    fields = ["status = ?", "updated_at = ?"]
+    values: list = [status, now]
+    if platform_url is not None:
+        fields.append("platform_url = ?")
+        values.append(platform_url)
+    if error is not None:
+        fields.append("error = ?")
+        values.append(error)
+    values.append(log_id)
+    async with aiosqlite.connect(db_path) as db:
+        await db.execute(f"UPDATE publish_log SET {', '.join(fields)} WHERE id = ?", values)
+        await db.commit()
+
+
+async def list_publish_log(db_path: Path, job_id: str) -> list[dict]:
+    async with aiosqlite.connect(db_path) as db:
+        async with db.execute(
+            "SELECT id, job_id, platform, status, platform_url, error, created_at FROM publish_log WHERE job_id=? ORDER BY created_at DESC",
+            (job_id,),
+        ) as cur:
+            rows = await cur.fetchall()
+            return [
+                {"id": r[0], "job_id": r[1], "platform": r[2], "status": r[3], "platform_url": r[4], "error": r[5], "created_at": r[6]}
+                for r in rows
+            ]
+
+
+# ── Brand kits ────────────────────────────────────────────────────────────────
+
+def _row_to_brand_kit(row) -> dict:
+    return {
+        "id": row[0], "name": row[1], "logo_path": row[2],
+        "watermark_position": row[3], "subtitle_font_size": row[4],
+        "subtitle_color": row[5], "subtitle_bg": row[6], "subtitle_position": row[7],
+        "default_format": row[8], "output_subfolder": row[9], "created_at": row[10],
+    }
+
+
+async def list_brand_kits(db_path: Path) -> list[dict]:
+    async with aiosqlite.connect(db_path) as db:
+        async with db.execute(
+            "SELECT id,name,logo_path,watermark_position,subtitle_font_size,subtitle_color,subtitle_bg,subtitle_position,default_format,output_subfolder,created_at FROM brand_kits ORDER BY created_at DESC"
+        ) as cur:
+            return [_row_to_brand_kit(r) for r in await cur.fetchall()]
+
+
+async def get_brand_kit(db_path: Path, kit_id: str) -> dict | None:
+    async with aiosqlite.connect(db_path) as db:
+        async with db.execute(
+            "SELECT id,name,logo_path,watermark_position,subtitle_font_size,subtitle_color,subtitle_bg,subtitle_position,default_format,output_subfolder,created_at FROM brand_kits WHERE id=?",
+            (kit_id,),
+        ) as cur:
+            row = await cur.fetchone()
+            return _row_to_brand_kit(row) if row else None
+
+
+async def save_brand_kit(
+    db_path: Path,
+    name: str,
+    logo_path: str | None = None,
+    watermark_position: str = "br",
+    subtitle_font_size: int = 24,
+    subtitle_color: str = "#ffffff",
+    subtitle_bg: str = "shadow",
+    subtitle_position: str = "bottom",
+    default_format: str = "mp4",
+    output_subfolder: str = "",
+) -> dict:
+    now = datetime.now(timezone.utc).isoformat()
+    kit_id = str(uuid.uuid4())
+    async with aiosqlite.connect(db_path) as db:
+        await db.execute(
+            """INSERT OR REPLACE INTO brand_kits
+               (id,name,logo_path,watermark_position,subtitle_font_size,subtitle_color,subtitle_bg,subtitle_position,default_format,output_subfolder,created_at)
+               VALUES (?,?,?,?,?,?,?,?,?,?,?)""",
+            (kit_id, name, logo_path, watermark_position, subtitle_font_size, subtitle_color, subtitle_bg, subtitle_position, default_format, output_subfolder, now),
+        )
+        await db.commit()
+    return {
+        "id": kit_id, "name": name, "logo_path": logo_path,
+        "watermark_position": watermark_position, "subtitle_font_size": subtitle_font_size,
+        "subtitle_color": subtitle_color, "subtitle_bg": subtitle_bg, "subtitle_position": subtitle_position,
+        "default_format": default_format, "output_subfolder": output_subfolder, "created_at": now,
+    }
+
+
+async def delete_brand_kit(db_path: Path, kit_id: str) -> bool:
+    async with aiosqlite.connect(db_path) as db:
+        cursor = await db.execute("DELETE FROM brand_kits WHERE id=?", (kit_id,))
         await db.commit()
         return cursor.rowcount > 0

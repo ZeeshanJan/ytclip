@@ -24,6 +24,17 @@
 
       <div class="flex flex-col gap-4">
 
+        <!-- ── Brand Kit ──────────────────────────────────────────── -->
+        <div class="brand-kit-bar">
+          <i class="fa-solid fa-palette brand-kit-icon"></i>
+          <select id="brand-kit-select" class="brand-kit-select">
+            <option value="">No brand kit</option>
+          </select>
+          <a href="/settings#brand-kits" class="brand-kit-manage" target="_blank" title="Manage brand kits">
+            <i class="fa-solid fa-gear"></i>
+          </a>
+        </div>
+
         <!-- ── Presets ─────────────────────────────────────────────── -->
         <div class="presets-section">
           <div class="presets-header">
@@ -630,6 +641,71 @@
   });
 
   _loadPresets();
+
+  // ── Brand Kits ───────────────────────────────────────────────────────────
+  async function _loadBrandKits() {
+    try {
+      var res = await fetch('/brand-kits');
+      var kits = await res.json();
+      var sel = document.getElementById('brand-kit-select');
+      if (!sel) return;
+      sel.innerHTML = '<option value="">No brand kit</option>';
+      kits.forEach(function(k) {
+        var opt = document.createElement('option');
+        opt.value = JSON.stringify(k);
+        opt.textContent = k.name;
+        sel.appendChild(opt);
+      });
+    } catch(e) {}
+  }
+
+  document.getElementById('brand-kit-select').addEventListener('change', function() {
+    if (!this.value) return;
+    var kit;
+    try { kit = JSON.parse(this.value); } catch(e) { return; }
+    // Apply kit settings using the same logic as _applyPreset
+    if (kit.default_format) _setFormat(kit.default_format);
+    if (kit.subtitle_font_size) {
+      document.getElementById('subtitle-font-size').value = kit.subtitle_font_size;
+      document.querySelectorAll('.sub-size-btn').forEach(function(b) {
+        b.classList.toggle('active', b.dataset.size == kit.subtitle_font_size);
+      });
+    }
+    if (kit.subtitle_color) {
+      document.getElementById('subtitle-color').value = kit.subtitle_color;
+      document.querySelectorAll('.sub-color-btn').forEach(function(b) {
+        b.classList.toggle('active', b.dataset.color === kit.subtitle_color);
+      });
+    }
+    if (kit.subtitle_bg) {
+      document.getElementById('subtitle-bg').value = kit.subtitle_bg;
+      document.querySelectorAll('.sub-bg-btn').forEach(function(b) {
+        b.classList.toggle('active', b.dataset.bg === kit.subtitle_bg);
+      });
+    }
+    if (kit.subtitle_position) {
+      document.getElementById('subtitle-position').value = kit.subtitle_position;
+      document.querySelectorAll('.sub-pos-btn').forEach(function(b) {
+        b.classList.toggle('active', b.dataset.pos === kit.subtitle_position);
+      });
+    }
+    if (kit.watermark_position) {
+      document.getElementById('watermark-pos-input').value = kit.watermark_position;
+      document.querySelectorAll('.pos-btn').forEach(function(b) {
+        b.classList.toggle('active', b.dataset.pos === kit.watermark_position);
+      });
+    }
+    if (kit.logo_path) {
+      document.getElementById('watermark-image-path-input').value = kit.logo_path;
+      // Enable watermark panel + show thumbnail
+      var wmCb = document.getElementById('watermark-enabled-cb');
+      if (!wmCb.checked) { wmCb.checked = true; wmCb.dispatchEvent(new Event('change')); }
+      var nameEl = document.getElementById('wm-file-name');
+      if (nameEl) nameEl.textContent = kit.name + ' logo';
+    }
+  });
+
+  _loadBrandKits();
 
   // ── Watermark history ────────────────────────────────────────────────
   async function _loadWatermarkHistory() {

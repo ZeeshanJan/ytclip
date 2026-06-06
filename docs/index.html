@@ -356,6 +356,10 @@
     <span class="tag"><i class="fa-brands fa-python"></i> Python 3.12</span>
     <span class="tag"><i class="fa-brands fa-docker"></i> Docker Ready</span>
     <span class="tag"><i class="fa-solid fa-hard-drive"></i> Self-hosted</span>
+    <span class="tag"><i class="fa-brands fa-youtube" style="color:#ff0000"></i> YouTube Shorts</span>
+    <span class="tag"><i class="fa-brands fa-tiktok"></i> TikTok</span>
+    <span class="tag"><i class="fa-brands fa-instagram" style="color:#e1306c"></i> Instagram Reels</span>
+    <span class="tag"><i class="fa-brands fa-linkedin" style="color:#0077b5"></i> LinkedIn</span>
   </div>
 
   <div class="hero-cta">
@@ -512,6 +516,37 @@
         <h3>Full CLI included</h3>
         <p>Script it. Automate it. The <code style="font-family:'JetBrains Mono',monospace;font-size:.85em;background:var(--bg);padding:1px 5px;border-radius:3px">ytclip clip</code> command runs standalone — no server needed.</p>
       </div>
+
+      <div class="feat-card reveal reveal-d1">
+        <div class="feat-icon" style="background:#fdf4ff;color:#a855f7"><i class="fa-solid fa-layer-group"></i></div>
+        <h3>Clip Queue &amp; batch export</h3>
+        <p>Add multiple clip segments to a queue, then hit Export All. Each runs as an independent job with live SSE progress — no waiting between clips.</p>
+      </div>
+      <div class="feat-card reveal reveal-d2">
+        <div class="feat-icon" style="background:#fef3c7;color:#d97706"><i class="fa-solid fa-closed-captioning"></i></div>
+        <h3>Subtitle burn-in</h3>
+        <p>Download and burn English subtitles directly into the video. Full style control: font size, colour, background (none/shadow/box), and position (top/bottom).</p>
+      </div>
+      <div class="feat-card reveal reveal-d3">
+        <div class="feat-icon" style="background:#f0fdf4;color:#16a34a"><i class="fa-solid fa-bookmark"></i></div>
+        <h3>Presets</h3>
+        <p>Save any combination of format, speed, crop, watermark, and subtitle settings as a named preset. Load back with one click. Stored server-side in SQLite.</p>
+      </div>
+      <div class="feat-card reveal reveal-d4">
+        <div class="feat-icon" style="background:#eff6ff;color:#3b82f6"><i class="fa-solid fa-share-nodes"></i></div>
+        <h3>Shareable clip links</h3>
+        <p>Every completed clip gets a hosted <code style="font-family:'JetBrains Mono',monospace;font-size:.85em;background:var(--bg);padding:1px 5px;border-radius:3px">/share/{id}</code> page with embedded player and social share buttons.</p>
+      </div>
+      <div class="feat-card reveal reveal-d5">
+        <div class="feat-icon" style="background:#fff1f2;color:#f43f5e"><i class="fa-solid fa-share-from-square"></i></div>
+        <h3>Direct platform publishing</h3>
+        <p>Publish to YouTube Shorts, Instagram Reels, TikTok, and LinkedIn without leaving ytclip. Connect accounts once via OAuth, then publish any clip with two clicks.</p>
+      </div>
+      <div class="feat-card reveal reveal-d6">
+        <div class="feat-icon" style="background:#fdf2f8;color:#c026d3"><i class="fa-solid fa-palette"></i></div>
+        <h3>Brand kits</h3>
+        <p>Save named brand profiles — logo, watermark position, subtitle style, default format. Switch between brands or clients in a single click.</p>
+      </div>
     </div>
   </div>
 </section>
@@ -650,8 +685,93 @@
         <div class="ct-copy">
           <div class="ct-icon" style="background:#fff8eb;color:#f59e0b"><i class="fa-solid fa-stamp"></i></div>
           <h3>Watermark &amp; branding</h3>
-          <p>Stamp your handle, channel name, or upload a logo PNG. Four corner positions. Every clip you share carries your brand — automatically.</p>
-          <div class="ct-chips"><span>Text overlay</span><span>Logo PNG</span><span>4 positions</span></div>
+          <p>Stamp your handle, channel name, or upload a logo PNG. Four corner positions. The app remembers your last 5 watermarks for instant re-use — no re-uploading.</p>
+          <div class="ct-chips"><span>Text overlay</span><span>Logo PNG</span><span>4 positions</span><span>History memory</span></div>
+        </div>
+      </div>
+
+      <!-- Platform Publishing card -->
+      <div class="ct-card reveal reveal-d1">
+        <div class="ct-demo" style="background:linear-gradient(155deg,#080d1a 0%,#050910 100%);flex-direction:column;gap:1rem">
+          <div style="display:flex;gap:.9rem;align-items:center;justify-content:center">
+            <div style="display:flex;flex-direction:column;align-items:center;gap:.3rem">
+              <div style="width:2.6rem;height:2.6rem;border-radius:50%;border:2.5px solid #ff0000;display:flex;align-items:center;justify-content:center;color:#ff0000;font-size:1.15rem;background:rgba(255,0,0,.08)"><i class="fa-brands fa-youtube"></i></div>
+              <span style="font-size:.52rem;color:rgba(255,255,255,.35);font-family:'JetBrains Mono',monospace">Shorts</span>
+            </div>
+            <div style="display:flex;flex-direction:column;align-items:center;gap:.3rem">
+              <div style="width:2.6rem;height:2.6rem;border-radius:50%;border:2.5px solid #e1306c;display:flex;align-items:center;justify-content:center;color:#e1306c;font-size:1.15rem;background:rgba(225,48,108,.08)"><i class="fa-brands fa-instagram"></i></div>
+              <span style="font-size:.52rem;color:rgba(255,255,255,.35);font-family:'JetBrains Mono',monospace">Reels</span>
+            </div>
+            <div style="display:flex;flex-direction:column;align-items:center;gap:.3rem">
+              <div style="width:2.6rem;height:2.6rem;border-radius:50%;border:2.5px solid rgba(255,255,255,.7);display:flex;align-items:center;justify-content:center;color:rgba(255,255,255,.7);font-size:1.15rem;background:rgba(255,255,255,.06)"><i class="fa-brands fa-tiktok"></i></div>
+              <span style="font-size:.52rem;color:rgba(255,255,255,.35);font-family:'JetBrains Mono',monospace">TikTok</span>
+            </div>
+            <div style="display:flex;flex-direction:column;align-items:center;gap:.3rem">
+              <div style="width:2.6rem;height:2.6rem;border-radius:50%;border:2.5px solid #0077b5;display:flex;align-items:center;justify-content:center;color:#0077b5;font-size:1.15rem;background:rgba(0,119,181,.08)"><i class="fa-brands fa-linkedin"></i></div>
+              <span style="font-size:.52rem;color:rgba(255,255,255,.35);font-family:'JetBrains Mono',monospace">LinkedIn</span>
+            </div>
+          </div>
+          <div style="width:100%;max-width:240px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:8px;padding:.6rem .85rem;display:flex;flex-direction:column;gap:.35rem">
+            <div style="font-size:.62rem;color:rgba(255,255,255,.3);font-family:'JetBrains Mono',monospace;margin-bottom:.1rem">PUBLISH STATUS</div>
+            <div style="display:flex;align-items:center;gap:.5rem">
+              <i class="fa-brands fa-youtube" style="color:#ff0000;font-size:.85rem"></i>
+              <span style="font-size:.68rem;color:rgba(255,255,255,.6);flex:1">YouTube Shorts</span>
+              <span style="font-size:.6rem;font-weight:700;color:#4ade80;background:rgba(74,222,128,.12);padding:.1rem .4rem;border-radius:4px">Published</span>
+            </div>
+            <div style="display:flex;align-items:center;gap:.5rem">
+              <i class="fa-brands fa-tiktok" style="color:rgba(255,255,255,.6);font-size:.85rem"></i>
+              <span style="font-size:.68rem;color:rgba(255,255,255,.6);flex:1">TikTok</span>
+              <span style="font-size:.6rem;font-weight:700;color:#60a5fa;background:rgba(96,165,250,.12);padding:.1rem .4rem;border-radius:4px"><i class="fa-solid fa-spinner fa-spin" style="font-size:.55rem"></i> Uploading</span>
+            </div>
+            <div style="display:flex;align-items:center;gap:.5rem">
+              <i class="fa-brands fa-instagram" style="color:rgba(255,255,255,.2);font-size:.85rem"></i>
+              <span style="font-size:.68rem;color:rgba(255,255,255,.25);flex:1">Instagram</span>
+              <span style="font-size:.6rem;color:rgba(255,255,255,.2)">—</span>
+            </div>
+          </div>
+        </div>
+        <div class="ct-copy">
+          <div class="ct-icon" style="background:#fff1f2;color:#f43f5e"><i class="fa-solid fa-share-from-square"></i></div>
+          <h3>Direct platform publishing</h3>
+          <p>Connect your accounts once via OAuth in Settings. When a clip finishes, click the platform icon and hit Publish — ytclip uploads directly, no download-then-re-upload loop.</p>
+          <div class="ct-chips"><span>YouTube Shorts</span><span>Instagram Reels</span><span>TikTok</span><span>LinkedIn</span></div>
+        </div>
+      </div>
+
+      <!-- Brand Kits card -->
+      <div class="ct-card reveal reveal-d2">
+        <div class="ct-demo" style="background:linear-gradient(155deg,#0d0a1a 0%,#080614 100%);flex-direction:column;gap:.7rem">
+          <div style="position:relative;width:100%;height:130px">
+            <div style="position:absolute;left:50%;top:8px;transform:translateX(-50%) rotate(-4deg);width:180px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);border-radius:10px;padding:.6rem .75rem;display:flex;align-items:center;gap:.6rem">
+              <div style="width:1.6rem;height:1.6rem;border-radius:5px;background:rgba(16,185,129,.2);display:flex;align-items:center;justify-content:center;color:#34d399;font-size:.7rem;flex-shrink:0"><i class="fa-solid fa-leaf"></i></div>
+              <span style="font-size:.72rem;color:rgba(255,255,255,.3);font-weight:600">EcoChannel</span>
+            </div>
+            <div style="position:absolute;left:50%;top:20px;transform:translateX(-50%) rotate(2deg);width:180px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.14);border-radius:10px;padding:.6rem .75rem;display:flex;align-items:center;gap:.6rem">
+              <div style="width:1.6rem;height:1.6rem;border-radius:5px;background:rgba(245,158,11,.2);display:flex;align-items:center;justify-content:center;color:#fbbf24;font-size:.7rem;flex-shrink:0"><i class="fa-solid fa-fire"></i></div>
+              <span style="font-size:.72rem;color:rgba(255,255,255,.45);font-weight:600">TechPodcast</span>
+            </div>
+            <div style="position:absolute;left:50%;top:36px;transform:translateX(-50%);width:200px;background:rgba(94,129,172,.15);border:1.5px solid rgba(94,129,172,.5);border-radius:10px;padding:.6rem .85rem;display:flex;flex-direction:column;gap:.45rem;box-shadow:0 4px 20px rgba(94,129,172,.25)">
+              <div style="display:flex;align-items:center;gap:.6rem">
+                <div style="width:1.8rem;height:1.8rem;border-radius:5px;background:rgba(94,129,172,.3);display:flex;align-items:center;justify-content:center;color:#7ba8cb;font-size:.75rem;flex-shrink:0"><i class="fa-solid fa-scissors"></i></div>
+                <span style="font-size:.78rem;color:rgba(255,255,255,.85);font-weight:700">My Brand</span>
+                <span style="margin-left:auto;font-size:.55rem;font-weight:700;color:#7ba8cb;background:rgba(94,129,172,.2);padding:.1rem .35rem;border-radius:4px">ACTIVE</span>
+              </div>
+              <div style="display:flex;gap:.3rem;flex-wrap:wrap">
+                <span style="font-size:.55rem;font-weight:600;padding:.1rem .4rem;border-radius:4px;background:rgba(255,255,255,.08);color:rgba(255,255,255,.45)">MP4</span>
+                <span style="font-size:.55rem;font-weight:600;padding:.1rem .4rem;border-radius:4px;background:rgba(255,255,255,.08);color:rgba(255,255,255,.45)">#fff · 24px</span>
+                <span style="font-size:.55rem;font-weight:600;padding:.1rem .4rem;border-radius:4px;background:rgba(255,255,255,.08);color:rgba(255,255,255,.45)">BR corner</span>
+              </div>
+            </div>
+          </div>
+          <div style="font-size:.62rem;color:rgba(94,129,172,.7);font-family:'JetBrains Mono',monospace;text-align:center;letter-spacing:.04em">
+            <i class="fa-solid fa-arrow-down" style="font-size:.55rem"></i> All settings applied instantly
+          </div>
+        </div>
+        <div class="ct-copy">
+          <div class="ct-icon" style="background:#fdf2f8;color:#c026d3"><i class="fa-solid fa-palette"></i></div>
+          <h3>Brand kits</h3>
+          <p>Save a complete brand profile — logo, watermark position, subtitle style, and default format — under one name. Switch between brands or clients in a single click.</p>
+          <div class="ct-chips"><span>Logo upload</span><span>Subtitle style</span><span>Per-client profiles</span><span>Instant apply</span></div>
         </div>
       </div>
 
@@ -781,6 +901,56 @@
         </div>
       </details>
 
+      <details class="faq-item">
+        <summary>
+          How do I set up direct platform publishing?
+          <span class="faq-icon"><i class="fa-solid fa-plus"></i></span>
+        </summary>
+        <div class="faq-body">
+          <p>Each platform requires a free developer app. Create an app on the platform's developer portal, add <code>{your-ytclip-url}/publish/callback/{platform}</code> as an OAuth redirect URI, then copy the client ID and secret into <code>config.toml</code> under <code>[platforms.youtube]</code>, <code>[platforms.instagram]</code>, etc. Also set <code>public_url</code> to your ytclip address. Restart ytclip, go to <strong>Settings → Platform Connections</strong>, and click Connect. Full step-by-step setup is in the <a href="https://github.com/ZeeshanJan/ytclip#platform-publishing" target="_blank" rel="noopener" style="color:var(--primary);font-weight:600">README</a>.</p>
+        </div>
+      </details>
+
+      <details class="faq-item">
+        <summary>
+          Can I publish to multiple platforms at once?
+          <span class="faq-icon"><i class="fa-solid fa-plus"></i></span>
+        </summary>
+        <div class="faq-body">
+          <p>Not in a single action, but you can click each platform's publish button in quick succession. Each upload runs as a background task independently. The status (uploading → published / failed) updates live on the job card for each platform separately.</p>
+        </div>
+      </details>
+
+      <details class="faq-item">
+        <summary>
+          What is a brand kit and how is it different from a preset?
+          <span class="faq-icon"><i class="fa-solid fa-plus"></i></span>
+        </summary>
+        <div class="faq-body">
+          <p>A <strong>preset</strong> saves a full form state — start/end times, speed, crop, and all other per-clip settings. A <strong>brand kit</strong> is identity-focused: logo, watermark position, subtitle style, and default format as a reusable profile. Apply a brand kit to stamp consistent branding on every clip, then adjust clip-specific settings on top. Manage brand kits at <strong>Settings → Brand Kits</strong>.</p>
+        </div>
+      </details>
+
+      <details class="faq-item">
+        <summary>
+          How does the Clip Queue work?
+          <span class="faq-icon"><i class="fa-solid fa-plus"></i></span>
+        </summary>
+        <div class="faq-body">
+          <p>Instead of clicking Create Clip immediately, click <strong>Add to Queue</strong>. The current form state is captured and added to the queue panel. Repeat for as many segments as you like. Click <strong>Export All</strong> to fire every queued item as an independent job with its own real-time progress card. You can continue adding more clips while previous ones are processing.</p>
+        </div>
+      </details>
+
+      <details class="faq-item">
+        <summary>
+          How do subtitle burn-in and style controls work?
+          <span class="faq-icon"><i class="fa-solid fa-plus"></i></span>
+        </summary>
+        <div class="faq-body">
+          <p>When subtitles are enabled, ytclip downloads the English subtitle file via yt-dlp and passes it through ffmpeg's <code>subtitles</code> filter, which renders the text permanently into the video. You control font size (16–36px), colour, background style (none / shadow / box), and vertical position (top or bottom). The burn-in is permanent — intentional for social clips where captions are expected without user interaction.</p>
+        </div>
+      </details>
+
     </div>
   </div>
 </section>
@@ -875,6 +1045,8 @@
         <ul>
           <li><a href="https://github.com/ZeeshanJan/ytclip#quick-start"><i class="fa-solid fa-download fa-xs" style="margin-right:6px;opacity:.4"></i>Install</a></li>
           <li><a href="https://github.com/ZeeshanJan/ytclip#configuration"><i class="fa-solid fa-gear fa-xs" style="margin-right:6px;opacity:.4"></i>Configure</a></li>
+          <li><a href="https://github.com/ZeeshanJan/ytclip#platform-publishing"><i class="fa-solid fa-share-from-square fa-xs" style="margin-right:6px;opacity:.4"></i>Publishing</a></li>
+          <li><a href="https://github.com/ZeeshanJan/ytclip#brand-kits"><i class="fa-solid fa-palette fa-xs" style="margin-right:6px;opacity:.4"></i>Brand Kits</a></li>
         </ul>
       </div>
 

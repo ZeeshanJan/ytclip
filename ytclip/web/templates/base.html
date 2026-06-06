@@ -122,6 +122,9 @@
         <a href="/library" class="nav-item {% if request.url.path == '/library' %}active{% endif %}">
           <i class="fa-solid fa-film"></i> Library
         </a>
+        <a href="/settings" class="nav-item {% if request.url.path == '/settings' %}active{% endif %}">
+          <i class="fa-solid fa-gear"></i> Settings
+        </a>
         {% if show_logout %}
         <form method="post" action="/logout">
           <button type="submit" class="nav-item">
