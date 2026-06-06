@@ -6,6 +6,7 @@
   <title>ytclip — Self-hosted YouTube clip creator</title>
   <meta name="description" content="Self-hosted web app for creating clips from YouTube videos at source quality. No cloud. No subscription. Runs on your hardware.">
 
+  <link rel="icon" type="image/svg+xml" href="/static/favicon.svg">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
@@ -141,6 +142,8 @@
     .feat-icon{width:42px;height:42px;border-radius:10px;background:var(--primary-xl);display:flex;align-items:center;justify-content:center;margin-bottom:1rem;font-size:.95rem;color:var(--primary)}
     .feat-card h3{font-size:.95rem;font-weight:700;letter-spacing:-.02em;margin-bottom:.375rem}
     .feat-card p{font-size:.83rem;color:var(--muted);line-height:1.6}
+    .feat-card--wide{grid-column:1/-1;display:flex;align-items:flex-start;gap:1.5rem}
+    .feat-card--wide .feat-icon{flex-shrink:0;margin-bottom:0}
 
     /* ── CLI ──────────────────────────────────────────── */
     .cli-section{max-width:760px;margin:0 auto}
@@ -446,6 +449,13 @@
         <div class="feat-icon"><i class="fa-solid fa-terminal"></i></div>
         <h3>Full CLI included</h3>
         <p>Script it. Automate it. The <code style="font-family:'JetBrains Mono',monospace;font-size:.85em;background:var(--bg);padding:1px 5px;border-radius:3px">ytclip clip</code> command runs standalone — no server needed.</p>
+      </div>
+      <div class="feat-card feat-card--wide reveal reveal-d1">
+        <div class="feat-icon"><i class="fa-solid fa-crop-simple"></i></div>
+        <div>
+          <h3>Frame crop for Reels, Shorts &amp; Stories</h3>
+          <p>Drag a crop box over the video thumbnail — choose 9:16 portrait, 1:1 square, 4:5, 16:9 widescreen, or a fully custom region. Output resolution updates live as you drag. Perfect for repurposing landscape YouTube content into portrait-first social clips without leaving the browser.</p>
+        </div>
       </div>
     </div>
   </div>

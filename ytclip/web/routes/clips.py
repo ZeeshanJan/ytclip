@@ -2,11 +2,13 @@ from __future__ import annotations
 
 import asyncio
 import logging
+import shutil
+import tempfile
 import uuid
 from pathlib import Path
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, Form, Request
+from fastapi import APIRouter, Depends, File, Form, Request, UploadFile
 from fastapi.responses import FileResponse, HTMLResponse
 from fastapi.templating import Jinja2Templates
 from sse_starlette.sse import EventSourceResponse
@@ -30,6 +32,14 @@ async def create_clip_job(
     end_time: Annotated[str, Form()],
     output_format: Annotated[str, Form()] = "mp4",
     include_subtitles: Annotated[bool, Form()] = False,
+    crop_x: Annotated[float | None, Form()] = None,
+    crop_y: Annotated[float | None, Form()] = None,
+    crop_w: Annotated[float | None, Form()] = None,
+    crop_h: Annotated[float | None, Form()] = None,
+    speed: Annotated[float, Form()] = 1.0,
+    watermark_text: Annotated[str, Form()] = "",
+    watermark_position: Annotated[str, Form()] = "br",
+    watermark_image: Annotated[UploadFile | None, File()] = None,
     config: Config = Depends(get_config),
     runner: JobRunner = Depends(get_job_runner),
 ):
@@ -51,6 +61,19 @@ async def create_clip_job(
         fmt = OutputFormat(output_format)
     except ValueError:
         fmt = OutputFormat.MP4
+
+    crop: dict | None = None
+    if all(v is not None for v in (crop_x, crop_y, crop_w, crop_h)):
+        crop = {"x": crop_x, "y": crop_y, "w": crop_w, "h": crop_h}
+
+    wm_image_path: Path | None = None
+    wm_tmp_dir: str | None = None
+    if watermark_image and watermark_image.filename:
+        wm_tmp_dir = tempfile.mkdtemp(prefix="ytclip_wm_")
+        suffix = Path(watermark_image.filename).suffix or ".png"
+        wm_image_path = Path(wm_tmp_dir) / f"watermark{suffix}"
+        with open(wm_image_path, "wb") as fh:
+            shutil.copyfileobj(watermark_image.file, fh)
 
     job = ClipJob(
         id=str(uuid.uuid4()),
@@ -75,20 +98,29 @@ async def create_clip_job(
             bus.publish_sync(job.id, {"type": "progress", "percent": pct, "message": msg}, loop)
 
         try:
-            output_path, video_title = await create_clip(
-                job_id=job.id,
-                url=job.url,
-                start_time=job.start_time,
-                end_time=job.end_time,
-                output_format=job.output_format,
-                quality=job.quality,
-                include_subtitles=job.include_subtitles,
-                output_dir=config.general.output_dir,
-                filename_template=config.output.filename_template,
-                cookies_file=config.ytdlp.cookies_file,
-                prefer_segments_only=config.quality.prefer_segments_only,
-                progress_cb=progress_cb,
-            )
+            try:
+                output_path, video_title = await create_clip(
+                    job_id=job.id,
+                    url=job.url,
+                    start_time=job.start_time,
+                    end_time=job.end_time,
+                    output_format=job.output_format,
+                    quality=job.quality,
+                    include_subtitles=job.include_subtitles,
+                    output_dir=config.general.output_dir,
+                    filename_template=config.output.filename_template,
+                    cookies_file=config.ytdlp.cookies_file,
+                    prefer_segments_only=config.quality.prefer_segments_only,
+                    crop=crop,
+                    speed=speed,
+                    watermark_text=watermark_text,
+                    watermark_image=wm_image_path,
+                    watermark_position=watermark_position,
+                    progress_cb=progress_cb,
+                )
+            finally:
+                if wm_tmp_dir:
+                    shutil.rmtree(wm_tmp_dir, ignore_errors=True)
 
             await update_job_status(
                 config.db_path, job.id, JobStatus.COMPLETED,

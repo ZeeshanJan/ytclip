@@ -10,6 +10,8 @@ class OutputFormat(str, Enum):
     MKV = "mkv"
     MP3 = "mp3"
     AAC = "aac"
+    GIF = "gif"
+    WEBP = "webp"
 
 
 class JobStatus(str, Enum):

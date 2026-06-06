@@ -16,6 +16,7 @@
           hx-target="#jobs-list"
           hx-swap="afterbegin"
           hx-indicator="#clip-spinner"
+          hx-encoding="multipart/form-data"
           onsubmit="return _validateClip()">
 
       <input type="hidden" name="url" value="{{ url }}">
@@ -84,10 +85,12 @@
           <div class="flex flex-col gap-1">
             <span class="section-label">Format</span>
             <select name="output_format" class="select select-bordered select-sm" style="font-family: inherit;">
-              <option value="mp4" {% if default_format=="mp4" %}selected{% endif %}>MP4</option>
-              <option value="mkv" {% if default_format=="mkv" %}selected{% endif %}>MKV — source quality</option>
-              <option value="mp3" {% if default_format=="mp3" %}selected{% endif %}>MP3 — audio only</option>
-              <option value="aac" {% if default_format=="aac" %}selected{% endif %}>AAC — audio only</option>
+              <option value="mp4"  {% if default_format=="mp4"  %}selected{% endif %}>MP4</option>
+              <option value="mkv"  {% if default_format=="mkv"  %}selected{% endif %}>MKV — source quality</option>
+              <option value="mp3"  {% if default_format=="mp3"  %}selected{% endif %}>MP3 — audio only</option>
+              <option value="aac"  {% if default_format=="aac"  %}selected{% endif %}>AAC — audio only</option>
+              <option value="gif"  {% if default_format=="gif"  %}selected{% endif %}>GIF — animated</option>
+              <option value="webp" {% if default_format=="webp" %}selected{% endif %}>WebP — animated</option>
             </select>
           </div>
 
@@ -100,6 +103,106 @@
               Subtitles
             </label>
           </div>
+        </div>
+
+        <!-- ── Speed ──────────────────────────────────────────────── -->
+        <div class="speed-row">
+          <span class="section-label"><i class="fa-solid fa-gauge-high" style="font-size:.75rem"></i> Speed</span>
+          <div class="speed-buttons">
+            <button type="button" class="speed-btn" data-speed="0.25">0.25×</button>
+            <button type="button" class="speed-btn" data-speed="0.5">0.5×</button>
+            <button type="button" class="speed-btn active" data-speed="1">1×</button>
+            <button type="button" class="speed-btn" data-speed="1.5">1.5×</button>
+            <button type="button" class="speed-btn" data-speed="2">2×</button>
+          </div>
+          <input type="hidden" name="speed" id="speed-input" value="1">
+        </div>
+
+        <!-- ── Watermark ───────────────────────────────────────────── -->
+        <div class="crop-toggle-row">
+          <label class="subtitle-toggle" style="gap:.625rem">
+            <input type="checkbox" id="watermark-enabled-cb" class="checkbox checkbox-sm">
+            <i class="fa-solid fa-stamp" style="font-size:.8rem;opacity:.7"></i>
+            Watermark
+          </label>
+        </div>
+
+        <div id="watermark-panel" class="watermark-panel">
+          <div class="wm-row">
+            <input type="text" name="watermark_text" id="watermark-text-input"
+                   class="wm-text-input" placeholder="@yourhandle or any text"
+                   maxlength="80" disabled>
+          </div>
+          <div class="wm-row wm-row-split">
+            <div class="wm-field">
+              <span class="section-label">Image <span class="wm-note">(PNG/WebP, not GIF)</span></span>
+              <input type="file" name="watermark_image" id="watermark-image-input"
+                     class="wm-file-input" accept="image/png,image/webp,image/jpeg" disabled>
+            </div>
+            <div class="wm-field">
+              <span class="section-label">Position</span>
+              <select name="watermark_position" id="watermark-pos-select"
+                      class="select select-bordered select-sm" style="font-family:inherit" disabled>
+                <option value="br">Bottom right</option>
+                <option value="bl">Bottom left</option>
+                <option value="tr">Top right</option>
+                <option value="tl">Top left</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <!-- ── Crop ───────────────────────────────────────────────── -->
+        <div class="crop-toggle-row">
+          <label class="subtitle-toggle" style="gap:.625rem">
+            <input type="checkbox" id="crop-enabled-cb" class="checkbox checkbox-sm">
+            <i class="fa-solid fa-crop-simple" style="font-size:.8rem;opacity:.7"></i>
+            Crop frame
+          </label>
+        </div>
+
+        <div id="crop-panel" class="crop-panel">
+
+          <div class="crop-presets">
+            <button type="button" class="crop-preset-btn active" data-preset="9:16">9:16</button>
+            <button type="button" class="crop-preset-btn" data-preset="1:1">1:1</button>
+            <button type="button" class="crop-preset-btn" data-preset="4:5">4:5</button>
+            <button type="button" class="crop-preset-btn" data-preset="16:9">16:9</button>
+            <button type="button" class="crop-preset-btn" data-preset="custom">Custom</button>
+          </div>
+
+          <div class="crop-canvas-wrapper" id="crop-canvas-wrapper"
+               style="aspect-ratio: {{ video_width or 16 }} / {{ video_height or 9 }}">
+            <img class="crop-thumb" id="crop-thumb"
+                 src="https://img.youtube.com/vi/{{ video_id }}/maxresdefault.jpg"
+                 onerror="this.src='https://img.youtube.com/vi/{{ video_id }}/hqdefault.jpg'"
+                 alt="Video thumbnail" draggable="false">
+            <div class="crop-mask" id="cmask-t"></div>
+            <div class="crop-mask" id="cmask-b"></div>
+            <div class="crop-mask" id="cmask-l"></div>
+            <div class="crop-mask" id="cmask-r"></div>
+            <div class="crop-box" id="crop-box">
+              <div class="crop-box-rule crop-box-rule-h" style="top:33.33%"></div>
+              <div class="crop-box-rule crop-box-rule-h" style="top:66.66%"></div>
+              <div class="crop-box-rule crop-box-rule-v" style="left:33.33%"></div>
+              <div class="crop-box-rule crop-box-rule-v" style="left:66.66%"></div>
+              <div class="crop-handle" data-handle="nw"></div>
+              <div class="crop-handle" data-handle="ne"></div>
+              <div class="crop-handle" data-handle="sw"></div>
+              <div class="crop-handle" data-handle="se"></div>
+            </div>
+          </div>
+
+          <div class="crop-info">
+            <span class="crop-info-label"><i class="fa-solid fa-up-right-and-down-left-from-center fa-xs"></i> Output</span>
+            <span class="crop-resolution" id="crop-resolution">—</span>
+          </div>
+
+          <input type="hidden" name="crop_x" id="crop-x-input" disabled>
+          <input type="hidden" name="crop_y" id="crop-y-input" disabled>
+          <input type="hidden" name="crop_w" id="crop-w-input" disabled>
+          <input type="hidden" name="crop_h" id="crop-h-input" disabled>
+
         </div>
 
         <!-- ── Clip duration summary ──────────────────────────────── -->
@@ -211,6 +314,185 @@
     var t = _parseTime(endInput.value);
     if (!isNaN(t)) { endSlider.value = t; _updateDualFill(); _updateClipDuration(); }
   });
+
+  // ── Speed buttons ──────────────────────────────────────────────────────
+  document.querySelectorAll('.speed-btn').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      document.querySelectorAll('.speed-btn').forEach(function(b){ b.classList.remove('active'); });
+      btn.classList.add('active');
+      document.getElementById('speed-input').value = btn.dataset.speed;
+    });
+  });
+
+  // ── Watermark toggle ────────────────────────────────────────────────────
+  document.getElementById('watermark-enabled-cb').addEventListener('change', function() {
+    var active = this.checked;
+    var panel = document.getElementById('watermark-panel');
+    panel.style.display = active ? 'flex' : 'none';
+    ['watermark-text-input','watermark-image-input','watermark-pos-select'].forEach(function(id){
+      var el = document.getElementById(id);
+      if (el) el.disabled = !active;
+    });
+    // disable image watermark for GIF format
+    _syncWatermarkImageForFormat();
+  });
+
+  function _syncWatermarkImageForFormat() {
+    var fmt = document.querySelector('[name="output_format"]').value;
+    var imgInput = document.getElementById('watermark-image-input');
+    var wmActive = document.getElementById('watermark-enabled-cb').checked;
+    if (imgInput) imgInput.disabled = !wmActive || fmt === 'gif';
+  }
+
+  // ── Format-change side effects ──────────────────────────────────────────
+  document.querySelector('[name="output_format"]').addEventListener('change', function() {
+    var fmt = this.value;
+    var noAudio = (fmt === 'gif' || fmt === 'webp');
+    var subCb = document.querySelector('[name="include_subtitles"]');
+    if (subCb) subCb.disabled = noAudio;
+    _syncWatermarkImageForFormat();
+  });
+
+  // ── Crop editor ────────────────────────────────────────────────────────
+  (function () {
+    var VW = {{ video_width or 0 }};
+    var VH = {{ video_height or 0 }};
+
+    var PRESETS = {'9:16':{w:9,h:16},'1:1':{w:1,h:1},'4:5':{w:4,h:5},'16:9':{w:16,h:9}};
+    var _preset = '9:16', _custom = false;
+    var _cx = 0, _cy = 0, _cw = 1, _ch = 1;
+    var _drag = null;
+
+    var _wrapper  = document.getElementById('crop-canvas-wrapper');
+    var _box      = document.getElementById('crop-box');
+    var _maskT    = document.getElementById('cmask-t');
+    var _maskB    = document.getElementById('cmask-b');
+    var _maskL    = document.getElementById('cmask-l');
+    var _maskR    = document.getElementById('cmask-r');
+    var _resEl    = document.getElementById('crop-resolution');
+    var _inX      = document.getElementById('crop-x-input');
+    var _inY      = document.getElementById('crop-y-input');
+    var _inW      = document.getElementById('crop-w-input');
+    var _inH      = document.getElementById('crop-h-input');
+
+    function _clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
+
+    function _redraw() {
+      var W = _wrapper.offsetWidth, H = _wrapper.offsetHeight;
+      if (!W || !H) return;
+      var px = _cx * W, py = _cy * H, pw = _cw * W, ph = _ch * H;
+      _box.style.left   = px + 'px';
+      _box.style.top    = py + 'px';
+      _box.style.width  = pw + 'px';
+      _box.style.height = ph + 'px';
+      _maskT.style.cssText = 'top:0;left:0;right:0;height:' + py + 'px';
+      _maskB.style.cssText = 'bottom:0;left:0;right:0;height:' + (H - py - ph) + 'px';
+      _maskL.style.cssText = 'top:' + py + 'px;left:0;width:' + px + 'px;height:' + ph + 'px';
+      _maskR.style.cssText = 'top:' + py + 'px;right:0;width:' + (W - px - pw) + 'px;height:' + ph + 'px';
+      _inX.value = _cx.toFixed(6); _inY.value = _cy.toFixed(6);
+      _inW.value = _cw.toFixed(6); _inH.value = _ch.toFixed(6);
+      if (VW > 0 && VH > 0) {
+        var oW = Math.floor(_cw * VW / 2) * 2;
+        var oH = Math.floor(_ch * VH / 2) * 2;
+        _resEl.textContent = oW + ' × ' + oH;
+      } else {
+        _resEl.textContent = Math.round(_cw * 100) + '% × ' + Math.round(_ch * 100) + '%';
+      }
+    }
+
+    function _applyPreset(p) {
+      _preset = p; _custom = (p === 'custom');
+      var handles = _box.querySelectorAll('.crop-handle');
+      handles.forEach(function(h){ h.style.display = _custom ? 'block' : 'none'; });
+      if (!_custom) {
+        var r = PRESETS[p];
+        var W = _wrapper.offsetWidth, H = _wrapper.offsetHeight;
+        if (!W || !H) return;
+        var wAR = W / H, pAR = r.w / r.h;
+        if (wAR > pAR) { _ch = 1; _cw = pAR / wAR; }
+        else            { _cw = 1; _ch = wAR / pAR; }
+        _cx = (1 - _cw) / 2; _cy = (1 - _ch) / 2;
+      }
+      _redraw();
+    }
+
+    function _evXY(e) {
+      var t = e.touches ? e.touches[0] : e;
+      var r = _wrapper.getBoundingClientRect();
+      return {x: t.clientX - r.left, y: t.clientY - r.top};
+    }
+
+    function _onDown(e) {
+      e.preventDefault();
+      var p = _evXY(e), W = _wrapper.offsetWidth, H = _wrapper.offsetHeight;
+      var handle = e.target.dataset && e.target.dataset.handle;
+      var type = (handle && _custom) ? handle : 'move';
+      _drag = {type:type, sx:p.x, sy:p.y, cx:_cx, cy:_cy, cw:_cw, ch:_ch, W:W, H:H};
+    }
+
+    function _onMove(e) {
+      if (!_drag) return;
+      e.preventDefault();
+      var p = _evXY(e);
+      var dx = (p.x - _drag.sx) / _drag.W, dy = (p.y - _drag.sy) / _drag.H;
+      var MIN = 20 / _drag.W, MINH = 20 / _drag.H;
+      var nx = _drag.cx, ny = _drag.cy, nw = _drag.cw, nh = _drag.ch;
+      if (_drag.type === 'move') {
+        nx = _clamp(_drag.cx + dx, 0, 1 - nw);
+        ny = _clamp(_drag.cy + dy, 0, 1 - nh);
+      } else if (_drag.type === 'se') {
+        nw = _clamp(_drag.cw + dx, MIN, 1 - nx);
+        nh = _clamp(_drag.ch + dy, MINH, 1 - ny);
+      } else if (_drag.type === 'sw') {
+        nw = _clamp(_drag.cw - dx, MIN, _drag.cx + _drag.cw);
+        nx = _drag.cx + _drag.cw - nw;
+        nh = _clamp(_drag.ch + dy, MINH, 1 - ny);
+      } else if (_drag.type === 'ne') {
+        nw = _clamp(_drag.cw + dx, MIN, 1 - nx);
+        nh = _clamp(_drag.ch - dy, MINH, _drag.cy + _drag.ch);
+        ny = _drag.cy + _drag.ch - nh;
+      } else if (_drag.type === 'nw') {
+        nw = _clamp(_drag.cw - dx, MIN, _drag.cx + _drag.cw);
+        nx = _drag.cx + _drag.cw - nw;
+        nh = _clamp(_drag.ch - dy, MINH, _drag.cy + _drag.ch);
+        ny = _drag.cy + _drag.ch - nh;
+      }
+      _cx = nx; _cy = ny; _cw = nw; _ch = nh;
+      _redraw();
+    }
+
+    function _onUp() { _drag = null; }
+
+    _box.addEventListener('mousedown', _onDown);
+    _box.addEventListener('touchstart', _onDown, {passive:false});
+    document.addEventListener('mousemove', _onMove);
+    document.addEventListener('touchmove', _onMove, {passive:false});
+    document.addEventListener('mouseup', _onUp);
+    document.addEventListener('touchend', _onUp);
+    window.addEventListener('resize', _redraw);
+
+    document.querySelectorAll('.crop-preset-btn').forEach(function(btn) {
+      btn.addEventListener('click', function() {
+        document.querySelectorAll('.crop-preset-btn').forEach(function(b){ b.classList.remove('active'); });
+        btn.classList.add('active');
+        _applyPreset(btn.dataset.preset);
+      });
+    });
+
+    document.getElementById('crop-enabled-cb').addEventListener('change', function() {
+      var active = this.checked;
+      var panel = document.getElementById('crop-panel');
+      panel.style.display = active ? 'flex' : 'none';
+      _inX.disabled = !active; _inY.disabled = !active;
+      _inW.disabled = !active; _inH.disabled = !active;
+      var fmt = document.querySelector('[name="output_format"]');
+      ['mkv','mp3','aac'].forEach(function(v) {
+        var o = fmt.querySelector('option[value="' + v + '"]');
+        if (o) { o.disabled = active; if (active && fmt.value === v) fmt.value = 'mp4'; }
+      });
+      if (active) _applyPreset(_preset);
+    });
+  })();
 
   window._validateClip = function () {
     var errWrap = document.getElementById('clip-error');

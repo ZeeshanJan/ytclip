@@ -27,10 +27,12 @@ def _fetch_video_info(url: str) -> dict:
                 "duration": float(info.get("duration") or 0),
                 "title": info.get("title") or "",
                 "playable_in_embed": info.get("playable_in_embed", True),
+                "width": int(info.get("width") or 0),
+                "height": int(info.get("height") or 0),
             }
     except Exception as exc:
         logger.debug("Could not fetch video info for %s: %s", url, exc)
-        return {"duration": 0.0, "title": "", "playable_in_embed": True}
+        return {"duration": 0.0, "title": "", "playable_in_embed": True, "width": 0, "height": 0}
 
 
 @router.post("/video-info", response_class=HTMLResponse)
@@ -59,6 +61,8 @@ async def video_info(
             "video_duration": info["duration"],
             "video_title": info["title"],
             "playable_in_embed": info["playable_in_embed"],
+            "video_width": info["width"],
+            "video_height": info["height"],
             "default_format": config.output.default_format,
             "include_subtitles": config.output.include_subtitles,
         },
