@@ -222,7 +222,7 @@
           <div class="wm-bottom-row">
             <div class="wm-field">
               <span class="section-label">Logo <span class="wm-note">PNG · not GIF</span></span>
-              <label class="wm-file-label" id="wm-file-label">
+              <label class="wm-file-label" id="wm-file-label" for="watermark-image-input">
                 <i class="fa-solid fa-upload" style="font-size:.75rem;opacity:.6"></i>
                 <span id="wm-file-name">Choose image…</span>
               </label>
@@ -494,10 +494,8 @@
 
   function _renderPresets() {
     var container = document.getElementById('presets-chips');
-    var empty = document.getElementById('presets-empty');
     if (!_presets.length) {
-      container.innerHTML = '';
-      container.appendChild(empty);
+      container.innerHTML = '<span class="presets-empty">No presets saved yet</span>';
       return;
     }
     container.innerHTML = '';
@@ -766,7 +764,16 @@
       .then(function(res) { return res.text(); })
       .then(function(html) {
         var list = document.getElementById('jobs-list');
-        if (list) list.insertAdjacentHTML('afterbegin', html);
+        if (!list) return;
+        // insertAdjacentHTML doesn't execute <script> tags; parse and run them manually
+        var tmp = document.createElement('div');
+        tmp.innerHTML = html;
+        tmp.querySelectorAll('script').forEach(function(s) {
+          var ns = document.createElement('script');
+          ns.textContent = s.textContent;
+          document.body.appendChild(ns).parentNode.removeChild(ns);
+        });
+        list.insertAdjacentHTML('afterbegin', html);
       });
   }
 

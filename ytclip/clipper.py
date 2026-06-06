@@ -63,8 +63,8 @@ def _make_progress_hook(
     phase_start_pct: float,
     phase_end_pct: float,
     progress_cb: Callable[[float, str], None],
-    loop: asyncio.AbstractEventLoop,
 ) -> Callable:
+    # yt-dlp runs in a thread pool executor; publish_sync handles cross-thread dispatch.
     def hook(d: dict) -> None:
         if d["status"] == "downloading":
             total = d.get("total_bytes") or d.get("total_bytes_estimate", 0)
@@ -72,19 +72,10 @@ def _make_progress_hook(
             if total > 0:
                 ratio = downloaded / total
                 pct = phase_start_pct + ratio * (phase_end_pct - phase_start_pct)
-                msg = f"{phase}: {ratio * 100:.0f}%"
-                asyncio.run_coroutine_threadsafe(
-                    _async_cb(progress_cb, pct, msg), loop
-                )
+                progress_cb(pct, f"{phase}: {ratio * 100:.0f}%")
         elif d["status"] == "finished":
-            asyncio.run_coroutine_threadsafe(
-                _async_cb(progress_cb, phase_end_pct, f"{phase}: done"), loop
-            )
+            progress_cb(phase_end_pct, f"{phase}: done")
     return hook
-
-
-async def _async_cb(cb: Callable, *args) -> None:
-    cb(*args)
 
 
 async def _trim_with_ffmpeg(
@@ -413,7 +404,7 @@ async def create_clip(
             "quiet": True,
             "no_warnings": True,
             "progress_hooks": [
-                _make_progress_hook("Downloading", 0, 75, progress_cb, loop)
+                _make_progress_hook("Downloading", 0, 75, progress_cb)
             ],
         }
 

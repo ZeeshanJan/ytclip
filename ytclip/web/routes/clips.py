@@ -16,7 +16,7 @@ from sse_starlette.sse import EventSourceResponse
 from ...config import Config, get_config
 from ...clipper import create_clip
 from ...database import delete_job, get_job, insert_job, save_watermark, update_job_status
-from ...jobs import JobRunner, ProgressBus, get_job_runner, get_progress_bus
+from ...jobs import JobRunner, get_job_runner, get_progress_bus
 from ...models import ClipJob, JobStatus, OutputFormat, parse_time, format_time
 
 logger = logging.getLogger(__name__)
@@ -58,8 +58,7 @@ async def create_clip_job(
         return HTMLResponse('<div class="alert alert-error">Start time must be before end time.</div>')
 
     if config.general.max_clip_duration > 0 and (end_s - start_s) > config.general.max_clip_duration:
-        from ...models import format_time as ft
-        limit = ft(config.general.max_clip_duration)
+        limit = format_time(config.general.max_clip_duration)
         return HTMLResponse(f'<div class="alert alert-error">Clip duration exceeds the configured limit of {limit}.</div>')
 
     try:

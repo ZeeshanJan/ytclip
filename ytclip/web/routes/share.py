@@ -1,6 +1,8 @@
 from __future__ import annotations
 
+import json
 from pathlib import Path
+from urllib.parse import quote_plus
 
 from fastapi import APIRouter, Depends, Request
 from fastapi.responses import FileResponse, HTMLResponse
@@ -12,6 +14,8 @@ from ...models import JobStatus, format_time
 
 router = APIRouter(prefix="/share")
 templates = Jinja2Templates(directory=str(Path(__file__).parent.parent / "templates"))
+templates.env.filters["urlencode"] = quote_plus
+templates.env.filters["tojson"] = json.dumps
 
 
 @router.get("/{job_id}")
