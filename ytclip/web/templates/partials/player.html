@@ -80,30 +80,52 @@
           <span id="clip-error-msg"></span>
         </p>
 
-        <!-- ── Options ────────────────────────────────────────────── -->
-        <div class="options-row">
-          <div class="flex flex-col gap-1">
-            <span class="section-label">Format</span>
-            <select name="output_format" class="select select-bordered select-sm" style="font-family: inherit;">
-              <option value="mp4"  {% if default_format=="mp4"  %}selected{% endif %}>MP4</option>
-              <option value="mkv"  {% if default_format=="mkv"  %}selected{% endif %}>MKV — source quality</option>
-              <option value="mp3"  {% if default_format=="mp3"  %}selected{% endif %}>MP3 — audio only</option>
-              <option value="aac"  {% if default_format=="aac"  %}selected{% endif %}>AAC — audio only</option>
-              <option value="gif"  {% if default_format=="gif"  %}selected{% endif %}>GIF — animated</option>
-              <option value="webp" {% if default_format=="webp" %}selected{% endif %}>WebP — animated</option>
-            </select>
+        <!-- ── Format ─────────────────────────────────────────────── -->
+        <div class="flex flex-col gap-2">
+          <span class="section-label">Format</span>
+          <div class="fmt-grid">
+            <button type="button" class="fmt-btn{% if default_format=='mp4' %} active{% endif %}" data-fmt="mp4">
+              <i class="fa-solid fa-film"></i>
+              <span class="fmt-name">MP4</span>
+              <span class="fmt-desc">H.264 · AAC</span>
+            </button>
+            <button type="button" class="fmt-btn{% if default_format=='mkv' %} active{% endif %}" data-fmt="mkv">
+              <i class="fa-solid fa-box-archive"></i>
+              <span class="fmt-name">MKV</span>
+              <span class="fmt-desc">No re-encode</span>
+            </button>
+            <button type="button" class="fmt-btn{% if default_format=='mp3' %} active{% endif %}" data-fmt="mp3">
+              <i class="fa-solid fa-music"></i>
+              <span class="fmt-name">MP3</span>
+              <span class="fmt-desc">Audio only</span>
+            </button>
+            <button type="button" class="fmt-btn{% if default_format=='aac' %} active{% endif %}" data-fmt="aac">
+              <i class="fa-solid fa-headphones"></i>
+              <span class="fmt-name">AAC</span>
+              <span class="fmt-desc">Audio only</span>
+            </button>
+            <button type="button" class="fmt-btn{% if default_format=='gif' %} active{% endif %}" data-fmt="gif">
+              <i class="fa-solid fa-rotate"></i>
+              <span class="fmt-name">GIF</span>
+              <span class="fmt-desc">Animated</span>
+            </button>
+            <button type="button" class="fmt-btn{% if default_format=='webp' %} active{% endif %}" data-fmt="webp">
+              <i class="fa-solid fa-image"></i>
+              <span class="fmt-name">WebP</span>
+              <span class="fmt-desc">Animated</span>
+            </button>
           </div>
-
-          <div class="flex flex-col gap-1 justify-end" style="padding-bottom: 0.125rem;">
-            <span class="section-label">Options</span>
-            <label class="subtitle-toggle">
-              <input type="checkbox" name="include_subtitles" value="true"
-                     class="checkbox checkbox-sm"
-                     {% if include_subtitles %}checked{% endif %}>
-              Subtitles
-            </label>
-          </div>
+          <input type="hidden" name="output_format" id="output-format-input" value="{{ default_format }}">
         </div>
+
+        <!-- ── Subtitles ───────────────────────────────────────────── -->
+        <label class="sub-toggle-row">
+          <span class="section-label" style="margin:0">Subtitles</span>
+          <input type="checkbox" name="include_subtitles" value="true"
+                 id="subtitles-toggle"
+                 class="toggle toggle-sm toggle-primary"
+                 {% if include_subtitles %}checked{% endif %}>
+        </label>
 
         <!-- ── Speed ──────────────────────────────────────────────── -->
         <div class="speed-row">
@@ -119,47 +141,60 @@
         </div>
 
         <!-- ── Watermark ───────────────────────────────────────────── -->
-        <div class="crop-toggle-row">
-          <label class="subtitle-toggle" style="gap:.625rem">
-            <input type="checkbox" id="watermark-enabled-cb" class="checkbox checkbox-sm">
-            <i class="fa-solid fa-stamp" style="font-size:.8rem;opacity:.7"></i>
-            Watermark
-          </label>
-        </div>
+        <label class="feat-toggle-row">
+          <span class="feat-toggle-label">
+            <i class="fa-solid fa-stamp feat-toggle-icon"></i> Watermark
+          </span>
+          <input type="checkbox" id="watermark-enabled-cb" class="toggle toggle-sm toggle-primary">
+        </label>
 
         <div id="watermark-panel" class="watermark-panel">
-          <div class="wm-row">
-            <input type="text" name="watermark_text" id="watermark-text-input"
-                   class="wm-text-input" placeholder="@yourhandle or any text"
-                   maxlength="80" disabled>
-          </div>
-          <div class="wm-row wm-row-split">
+          <input type="text" name="watermark_text" id="watermark-text-input"
+                 class="wm-text-input" placeholder="@yourhandle or any text"
+                 maxlength="80" disabled>
+
+          <div class="wm-bottom-row">
             <div class="wm-field">
-              <span class="section-label">Image <span class="wm-note">(PNG/WebP, not GIF)</span></span>
+              <span class="section-label">Logo <span class="wm-note">PNG · not GIF</span></span>
+              <label class="wm-file-label" id="wm-file-label">
+                <i class="fa-solid fa-upload" style="font-size:.75rem;opacity:.6"></i>
+                <span id="wm-file-name">Choose image…</span>
+              </label>
               <input type="file" name="watermark_image" id="watermark-image-input"
-                     class="wm-file-input" accept="image/png,image/webp,image/jpeg" disabled>
+                     accept="image/png,image/webp,image/jpeg" class="sr-only" disabled>
             </div>
             <div class="wm-field">
               <span class="section-label">Position</span>
-              <select name="watermark_position" id="watermark-pos-select"
-                      class="select select-bordered select-sm" style="font-family:inherit" disabled>
-                <option value="br">Bottom right</option>
-                <option value="bl">Bottom left</option>
-                <option value="tr">Top right</option>
-                <option value="tl">Top left</option>
-              </select>
+              <div class="pos-grid-4">
+                <button type="button" class="pos-btn" data-pos="tl" disabled>
+                  <div class="pos-frame"><span class="pos-dot" style="top:3px;left:3px"></span></div>
+                  <span>Top L</span>
+                </button>
+                <button type="button" class="pos-btn" data-pos="tr" disabled>
+                  <div class="pos-frame"><span class="pos-dot" style="top:3px;right:3px"></span></div>
+                  <span>Top R</span>
+                </button>
+                <button type="button" class="pos-btn" data-pos="bl" disabled>
+                  <div class="pos-frame"><span class="pos-dot" style="bottom:3px;left:3px"></span></div>
+                  <span>Bot L</span>
+                </button>
+                <button type="button" class="pos-btn active" data-pos="br" disabled>
+                  <div class="pos-frame"><span class="pos-dot" style="bottom:3px;right:3px"></span></div>
+                  <span>Bot R</span>
+                </button>
+              </div>
+              <input type="hidden" name="watermark_position" id="watermark-pos-input" value="br">
             </div>
           </div>
         </div>
 
         <!-- ── Crop ───────────────────────────────────────────────── -->
-        <div class="crop-toggle-row">
-          <label class="subtitle-toggle" style="gap:.625rem">
-            <input type="checkbox" id="crop-enabled-cb" class="checkbox checkbox-sm">
-            <i class="fa-solid fa-crop-simple" style="font-size:.8rem;opacity:.7"></i>
-            Crop frame
-          </label>
-        </div>
+        <label class="feat-toggle-row">
+          <span class="feat-toggle-label">
+            <i class="fa-solid fa-crop-simple feat-toggle-icon"></i> Crop frame
+          </span>
+          <input type="checkbox" id="crop-enabled-cb" class="toggle toggle-sm toggle-primary">
+        </label>
 
         <div id="crop-panel" class="crop-panel">
 
@@ -315,6 +350,28 @@
     if (!isNaN(t)) { endSlider.value = t; _updateDualFill(); _updateClipDuration(); }
   });
 
+  // ── Format buttons ─────────────────────────────────────────────────────
+  var _fmtInput = document.getElementById('output-format-input');
+
+  function _setFormat(fmt) {
+    _fmtInput.value = fmt;
+    document.querySelectorAll('.fmt-btn').forEach(function(b){
+      b.classList.toggle('active', b.dataset.fmt === fmt);
+    });
+    var noAudio = (fmt === 'gif' || fmt === 'webp');
+    var subCb = document.getElementById('subtitles-toggle');
+    if (subCb) subCb.disabled = noAudio;
+    var imgInput = document.getElementById('watermark-image-input');
+    var wmOn = document.getElementById('watermark-enabled-cb').checked;
+    if (imgInput) imgInput.disabled = !wmOn || fmt === 'gif';
+    var wfLabel = document.getElementById('wm-file-label');
+    if (wfLabel) wfLabel.style.opacity = (!wmOn || fmt === 'gif') ? '0.35' : '1';
+  }
+
+  document.querySelectorAll('.fmt-btn').forEach(function(btn) {
+    btn.addEventListener('click', function() { if (!btn.disabled) _setFormat(btn.dataset.fmt); });
+  });
+
   // ── Speed buttons ──────────────────────────────────────────────────────
   document.querySelectorAll('.speed-btn').forEach(function(btn) {
     btn.addEventListener('click', function() {
@@ -324,33 +381,37 @@
     });
   });
 
+  // ── Position buttons ────────────────────────────────────────────────────
+  document.querySelectorAll('.pos-btn').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      if (btn.disabled) return;
+      document.querySelectorAll('.pos-btn').forEach(function(b){ b.classList.remove('active'); });
+      btn.classList.add('active');
+      document.getElementById('watermark-pos-input').value = btn.dataset.pos;
+    });
+  });
+
+  // ── Watermark image filename display ───────────────────────────────────
+  var _wmFileInput = document.getElementById('watermark-image-input');
+  if (_wmFileInput) {
+    _wmFileInput.addEventListener('change', function() {
+      var nameEl = document.getElementById('wm-file-name');
+      if (nameEl) nameEl.textContent = this.files[0] ? this.files[0].name : 'Choose image…';
+    });
+  }
+
   // ── Watermark toggle ────────────────────────────────────────────────────
   document.getElementById('watermark-enabled-cb').addEventListener('change', function() {
     var active = this.checked;
     var panel = document.getElementById('watermark-panel');
     panel.style.display = active ? 'flex' : 'none';
-    ['watermark-text-input','watermark-image-input','watermark-pos-select'].forEach(function(id){
-      var el = document.getElementById(id);
-      if (el) el.disabled = !active;
-    });
-    // disable image watermark for GIF format
-    _syncWatermarkImageForFormat();
-  });
-
-  function _syncWatermarkImageForFormat() {
-    var fmt = document.querySelector('[name="output_format"]').value;
+    document.getElementById('watermark-text-input').disabled = !active;
+    document.querySelectorAll('.pos-btn').forEach(function(b){ b.disabled = !active; });
+    var fmt = _fmtInput.value;
     var imgInput = document.getElementById('watermark-image-input');
-    var wmActive = document.getElementById('watermark-enabled-cb').checked;
-    if (imgInput) imgInput.disabled = !wmActive || fmt === 'gif';
-  }
-
-  // ── Format-change side effects ──────────────────────────────────────────
-  document.querySelector('[name="output_format"]').addEventListener('change', function() {
-    var fmt = this.value;
-    var noAudio = (fmt === 'gif' || fmt === 'webp');
-    var subCb = document.querySelector('[name="include_subtitles"]');
-    if (subCb) subCb.disabled = noAudio;
-    _syncWatermarkImageForFormat();
+    if (imgInput) imgInput.disabled = !active || fmt === 'gif';
+    var wfLabel = document.getElementById('wm-file-label');
+    if (wfLabel) wfLabel.style.opacity = (!active || fmt === 'gif') ? '0.35' : '1';
   });
 
   // ── Crop editor ────────────────────────────────────────────────────────
@@ -485,10 +546,12 @@
       panel.style.display = active ? 'flex' : 'none';
       _inX.disabled = !active; _inY.disabled = !active;
       _inW.disabled = !active; _inH.disabled = !active;
-      var fmt = document.querySelector('[name="output_format"]');
       ['mkv','mp3','aac'].forEach(function(v) {
-        var o = fmt.querySelector('option[value="' + v + '"]');
-        if (o) { o.disabled = active; if (active && fmt.value === v) fmt.value = 'mp4'; }
+        var b = document.querySelector('.fmt-btn[data-fmt="' + v + '"]');
+        if (b) {
+          b.disabled = active;
+          if (active && _fmtInput.value === v) _setFormat('mp4');
+        }
       });
       if (active) _applyPreset(_preset);
     });
