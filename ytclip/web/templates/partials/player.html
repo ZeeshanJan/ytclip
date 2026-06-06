@@ -12,7 +12,8 @@
   <!-- ── Clip controls ───────────────────────────────────────────────── -->
   <div class="controls-panel">
 
-    <form hx-post="/clips"
+    <form id="clip-form"
+          hx-post="/clips"
           hx-target="#jobs-list"
           hx-swap="afterbegin"
           hx-indicator="#clip-spinner"
@@ -22,6 +23,26 @@
       <input type="hidden" name="url" value="{{ url }}">
 
       <div class="flex flex-col gap-4">
+
+        <!-- ── Presets ─────────────────────────────────────────────── -->
+        <div class="presets-section">
+          <div class="presets-header">
+            <span class="section-label"><i class="fa-solid fa-bookmark" style="font-size:.65rem"></i> Presets</span>
+            <button type="button" class="btn-open-save" id="preset-save-toggle">
+              <i class="fa-solid fa-plus" style="font-size:.6rem"></i> Save
+            </button>
+          </div>
+          <div class="presets-chips" id="presets-chips">
+            <span class="presets-empty" id="presets-empty">No presets saved yet</span>
+          </div>
+          <div class="preset-save-row" id="preset-save-row" style="display:none">
+            <input type="text" class="preset-name-input" id="preset-name-input"
+                   placeholder="Preset name…" maxlength="40">
+            <button type="button" class="btn-save-preset" onclick="_savePreset()">
+              <i class="fa-solid fa-check"></i> Save
+            </button>
+          </div>
+        </div>
 
         <!-- ── Timeline ──────────────────────────────────────────────── -->
         <div class="flex flex-col gap-2">
@@ -119,13 +140,56 @@
         </div>
 
         <!-- ── Subtitles ───────────────────────────────────────────── -->
-        <label class="sub-toggle-row">
+        <div class="sub-toggle-row" style="display:flex;align-items:center;justify-content:space-between;">
           <span class="section-label" style="margin:0">Subtitles</span>
-          <input type="checkbox" name="include_subtitles" value="true"
-                 id="subtitles-toggle"
-                 class="toggle toggle-sm toggle-primary"
-                 {% if include_subtitles %}checked{% endif %}>
-        </label>
+          <div style="display:flex;align-items:center;gap:0.375rem;">
+            <button type="button" class="sub-style-chevron" id="sub-style-toggle" title="Style options">
+              <i class="fa-solid fa-chevron-down"></i>
+            </button>
+            <input type="checkbox" name="include_subtitles" value="true"
+                   id="subtitles-toggle"
+                   class="toggle toggle-sm toggle-primary"
+                   {% if include_subtitles %}checked{% endif %}>
+          </div>
+        </div>
+
+        <!-- ── Subtitle style panel ────────────────────────────────── -->
+        <div id="sub-style-panel" class="sub-style-panel">
+          <div class="sub-style-row">
+            <span class="section-label" style="margin:0;min-width:3rem">Size</span>
+            <button type="button" class="sub-size-btn" data-size="16">16</button>
+            <button type="button" class="sub-size-btn" data-size="20">20</button>
+            <button type="button" class="sub-size-btn active" data-size="24">24</button>
+            <button type="button" class="sub-size-btn" data-size="28">28</button>
+            <button type="button" class="sub-size-btn" data-size="36">36</button>
+            <input type="hidden" name="subtitle_font_size" id="subtitle-font-size" value="24">
+          </div>
+          <div class="sub-style-row">
+            <span class="section-label" style="margin:0;min-width:3rem">Color</span>
+            <button type="button" class="sub-color-btn active" data-color="#ffffff"
+                    style="background:#ffffff;border-color:#ccc;" title="White"></button>
+            <button type="button" class="sub-color-btn" data-color="#ffff00"
+                    style="background:#ffff00;" title="Yellow"></button>
+            <button type="button" class="sub-color-btn" data-color="#000000"
+                    style="background:#000000;" title="Black"></button>
+            <button type="button" class="sub-color-btn" data-color="#00ff00"
+                    style="background:#00ff00;" title="Green"></button>
+            <input type="hidden" name="subtitle_color" id="subtitle-color" value="#ffffff">
+          </div>
+          <div class="sub-style-row">
+            <span class="section-label" style="margin:0;min-width:3rem">BG</span>
+            <button type="button" class="sub-bg-btn" data-bg="none">None</button>
+            <button type="button" class="sub-bg-btn active" data-bg="shadow">Shadow</button>
+            <button type="button" class="sub-bg-btn" data-bg="box">Box</button>
+            <input type="hidden" name="subtitle_bg" id="subtitle-bg" value="shadow">
+          </div>
+          <div class="sub-style-row">
+            <span class="section-label" style="margin:0;min-width:3rem">Pos</span>
+            <button type="button" class="sub-pos-btn active" data-pos="bottom">Bottom</button>
+            <button type="button" class="sub-pos-btn" data-pos="top">Top</button>
+            <input type="hidden" name="subtitle_position" id="subtitle-position" value="bottom">
+          </div>
+        </div>
 
         <!-- ── Speed ──────────────────────────────────────────────── -->
         <div class="speed-row">
@@ -152,6 +216,8 @@
           <input type="text" name="watermark_text" id="watermark-text-input"
                  class="wm-text-input" placeholder="@yourhandle or any text"
                  maxlength="80" disabled>
+          <div class="wm-history-row" id="wm-history-row" style="display:none"></div>
+          <input type="hidden" name="watermark_image_path" id="watermark-image-path-input" value="">
 
           <div class="wm-bottom-row">
             <div class="wm-field">
@@ -248,12 +314,36 @@
           <span id="clip-duration-display" class="clip-summary-value">—</span>
         </div>
 
-        <!-- ── Submit ─────────────────────────────────────────────── -->
-        <button class="btn-create" type="submit">
-          <span id="clip-spinner" class="htmx-indicator loading loading-spinner loading-xs"></span>
-          <i class="fa-solid fa-scissors htmx-not-creating"></i>
-          Create Clip
-        </button>
+        <!-- ── Submit row ─────────────────────────────────────────── -->
+        <div style="display:flex;gap:0.5rem;">
+          <button type="button" class="btn-add-queue" onclick="_addToQueue()">
+            <i class="fa-solid fa-list-ul" style="font-size:.8rem"></i>
+            Add to Queue
+          </button>
+          <button class="btn-create" type="submit" style="flex:1.5">
+            <span id="clip-spinner" class="htmx-indicator loading loading-spinner loading-xs"></span>
+            <i class="fa-solid fa-scissors htmx-not-creating"></i>
+            Create Clip
+          </button>
+        </div>
+
+        <!-- ── Clip Queue panel ────────────────────────────────────── -->
+        <div class="queue-panel" id="queue-panel">
+          <div class="queue-header">
+            <span class="section-label"><i class="fa-solid fa-list-ul" style="font-size:.65rem"></i>
+              Queue (<span id="queue-count">0</span>)
+            </span>
+            <div class="queue-actions">
+              <button type="button" class="btn-export-all" onclick="_exportAll()">
+                <i class="fa-solid fa-paper-plane" style="font-size:.75rem"></i> Export All
+              </button>
+              <button type="button" class="btn-clear-queue" onclick="_clearQueue()">
+                Clear
+              </button>
+            </div>
+          </div>
+          <div class="queue-items" id="queue-items"></div>
+        </div>
 
       </div>
     </form>
@@ -350,6 +440,336 @@
     if (!isNaN(t)) { endSlider.value = t; _updateDualFill(); _updateClipDuration(); }
   });
 
+  // ── Subtitle style panel ───────────────────────────────────────────────
+  var _subStyleOpen = false;
+  document.getElementById('sub-style-toggle').addEventListener('click', function() {
+    _subStyleOpen = !_subStyleOpen;
+    var panel = document.getElementById('sub-style-panel');
+    panel.style.display = _subStyleOpen ? 'flex' : 'none';
+    this.classList.toggle('open', _subStyleOpen);
+  });
+
+  document.querySelectorAll('.sub-size-btn').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      document.querySelectorAll('.sub-size-btn').forEach(function(b){ b.classList.remove('active'); });
+      btn.classList.add('active');
+      document.getElementById('subtitle-font-size').value = btn.dataset.size;
+    });
+  });
+
+  document.querySelectorAll('.sub-color-btn').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      document.querySelectorAll('.sub-color-btn').forEach(function(b){ b.classList.remove('active'); });
+      btn.classList.add('active');
+      document.getElementById('subtitle-color').value = btn.dataset.color;
+    });
+  });
+
+  document.querySelectorAll('.sub-bg-btn').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      document.querySelectorAll('.sub-bg-btn').forEach(function(b){ b.classList.remove('active'); });
+      btn.classList.add('active');
+      document.getElementById('subtitle-bg').value = btn.dataset.bg;
+    });
+  });
+
+  document.querySelectorAll('.sub-pos-btn').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      document.querySelectorAll('.sub-pos-btn').forEach(function(b){ b.classList.remove('active'); });
+      btn.classList.add('active');
+      document.getElementById('subtitle-position').value = btn.dataset.pos;
+    });
+  });
+
+  // ── Presets ─────────────────────────────────────────────────────────────
+  var _presets = [];
+
+  async function _loadPresets() {
+    try {
+      var res = await fetch('/presets');
+      _presets = await res.json();
+      _renderPresets();
+    } catch(e) {}
+  }
+
+  function _renderPresets() {
+    var container = document.getElementById('presets-chips');
+    var empty = document.getElementById('presets-empty');
+    if (!_presets.length) {
+      container.innerHTML = '';
+      container.appendChild(empty);
+      return;
+    }
+    container.innerHTML = '';
+    _presets.forEach(function(p) {
+      var chip = document.createElement('span');
+      chip.className = 'preset-chip';
+      chip.title = p.name;
+      chip.innerHTML =
+        '<span class="preset-chip-name">' + _esc(p.name) + '</span>' +
+        '<button type="button" class="preset-chip-del" title="Delete">' +
+        '<i class="fa-solid fa-xmark"></i></button>';
+      chip.querySelector('.preset-chip-name').addEventListener('click', function() {
+        _applyPreset(p.settings);
+      });
+      chip.querySelector('.preset-chip-del').addEventListener('click', async function(e) {
+        e.stopPropagation();
+        await fetch('/presets/' + p.id, {method:'DELETE'});
+        _loadPresets();
+      });
+      container.appendChild(chip);
+    });
+  }
+
+  function _esc(str) {
+    return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  }
+
+  function _captureFormState() {
+    return {
+      output_format: document.getElementById('output-format-input').value,
+      speed: document.getElementById('speed-input').value,
+      watermark_text: document.getElementById('watermark-text-input').value,
+      watermark_position: document.getElementById('watermark-pos-input').value,
+      watermark_enabled: document.getElementById('watermark-enabled-cb').checked,
+      crop_enabled: document.getElementById('crop-enabled-cb').checked,
+      crop_preset: document.querySelector('.crop-preset-btn.active') ?
+        document.querySelector('.crop-preset-btn.active').dataset.preset : '9:16',
+      include_subtitles: document.getElementById('subtitles-toggle').checked,
+      subtitle_font_size: document.getElementById('subtitle-font-size').value,
+      subtitle_color: document.getElementById('subtitle-color').value,
+      subtitle_bg: document.getElementById('subtitle-bg').value,
+      subtitle_position: document.getElementById('subtitle-position').value,
+    };
+  }
+
+  function _applyPreset(s) {
+    if (!s) return;
+    if (s.output_format) _setFormat(s.output_format);
+    if (s.speed) {
+      document.getElementById('speed-input').value = s.speed;
+      document.querySelectorAll('.speed-btn').forEach(function(b) {
+        b.classList.toggle('active', b.dataset.speed == s.speed);
+      });
+    }
+    var wmCb = document.getElementById('watermark-enabled-cb');
+    if (typeof s.watermark_enabled !== 'undefined') {
+      wmCb.checked = s.watermark_enabled;
+      wmCb.dispatchEvent(new Event('change'));
+    }
+    if (s.watermark_text !== undefined) document.getElementById('watermark-text-input').value = s.watermark_text;
+    if (s.watermark_position) {
+      document.getElementById('watermark-pos-input').value = s.watermark_position;
+      document.querySelectorAll('.pos-btn').forEach(function(b) {
+        b.classList.toggle('active', b.dataset.pos === s.watermark_position);
+      });
+    }
+    var subCb = document.getElementById('subtitles-toggle');
+    if (typeof s.include_subtitles !== 'undefined') subCb.checked = s.include_subtitles;
+    if (s.subtitle_font_size) {
+      document.getElementById('subtitle-font-size').value = s.subtitle_font_size;
+      document.querySelectorAll('.sub-size-btn').forEach(function(b) {
+        b.classList.toggle('active', b.dataset.size == s.subtitle_font_size);
+      });
+    }
+    if (s.subtitle_color) {
+      document.getElementById('subtitle-color').value = s.subtitle_color;
+      document.querySelectorAll('.sub-color-btn').forEach(function(b) {
+        b.classList.toggle('active', b.dataset.color === s.subtitle_color);
+      });
+    }
+    if (s.subtitle_bg) {
+      document.getElementById('subtitle-bg').value = s.subtitle_bg;
+      document.querySelectorAll('.sub-bg-btn').forEach(function(b) {
+        b.classList.toggle('active', b.dataset.bg === s.subtitle_bg);
+      });
+    }
+    if (s.subtitle_position) {
+      document.getElementById('subtitle-position').value = s.subtitle_position;
+      document.querySelectorAll('.sub-pos-btn').forEach(function(b) {
+        b.classList.toggle('active', b.dataset.pos === s.subtitle_position);
+      });
+    }
+    var cropCb = document.getElementById('crop-enabled-cb');
+    if (typeof s.crop_enabled !== 'undefined') {
+      cropCb.checked = s.crop_enabled;
+      cropCb.dispatchEvent(new Event('change'));
+    }
+  }
+
+  async function _savePreset() {
+    var name = document.getElementById('preset-name-input').value.trim();
+    if (!name) return;
+    try {
+      await fetch('/presets', {
+        method: 'POST',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({name: name, settings: _captureFormState()}),
+      });
+      document.getElementById('preset-name-input').value = '';
+      document.getElementById('preset-save-row').style.display = 'none';
+      document.getElementById('preset-save-toggle').style.display = '';
+      _loadPresets();
+    } catch(e) {}
+  }
+
+  document.getElementById('preset-save-toggle').addEventListener('click', function() {
+    var row = document.getElementById('preset-save-row');
+    var visible = row.style.display !== 'none';
+    row.style.display = visible ? 'none' : 'flex';
+    if (!visible) {
+      document.getElementById('preset-name-input').focus();
+      this.style.display = 'none';
+    }
+  });
+
+  document.getElementById('preset-name-input').addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') { e.preventDefault(); _savePreset(); }
+    if (e.key === 'Escape') {
+      document.getElementById('preset-save-row').style.display = 'none';
+      document.getElementById('preset-save-toggle').style.display = '';
+    }
+  });
+
+  _loadPresets();
+
+  // ── Watermark history ────────────────────────────────────────────────
+  async function _loadWatermarkHistory() {
+    try {
+      var res = await fetch('/watermarks/history');
+      var history = await res.json();
+      _renderWatermarkHistory(history);
+    } catch(e) {}
+  }
+
+  function _renderWatermarkHistory(history) {
+    var row = document.getElementById('wm-history-row');
+    if (!history || !history.length) { row.style.display = 'none'; return; }
+    row.style.display = 'flex';
+    row.innerHTML = '<span class="section-label" style="margin:0;flex-shrink:0">Recent</span>';
+    history.forEach(function(h) {
+      var chip = document.createElement('span');
+      chip.className = 'wm-history-chip';
+      if (h.type === 'image' && h.image_path) {
+        chip.innerHTML = '<img class="wm-history-thumb" src="/watermarks/history/' + h.id + '/image" alt="">' + _esc(h.value);
+        chip.title = h.value;
+        chip.addEventListener('click', function() {
+          document.getElementById('watermark-image-path-input').value = h.image_path;
+          document.getElementById('wm-file-name').textContent = h.value;
+        });
+      } else {
+        chip.textContent = h.value;
+        chip.title = h.value;
+        chip.addEventListener('click', function() {
+          document.getElementById('watermark-text-input').value = h.value;
+        });
+      }
+      row.appendChild(chip);
+    });
+  }
+
+  // ── Clip queue ────────────────────────────────────────────────────────
+  var _clipQueue = [];
+
+  function _queueFormState() {
+    var start = document.getElementById('start-display').value;
+    var end   = document.getElementById('end-display').value;
+    var fmt   = document.getElementById('output-format-input').value;
+    var speed = document.getElementById('speed-input').value;
+    var s = _parseTime(start), e = _parseTime(end);
+    return {
+      start_time: start, end_time: end,
+      output_format: fmt, speed: speed,
+      include_subtitles: document.getElementById('subtitles-toggle').checked,
+      watermark_text: document.getElementById('watermark-text-input').value,
+      watermark_position: document.getElementById('watermark-pos-input').value,
+      watermark_image_path: document.getElementById('watermark-image-path-input').value,
+      subtitle_font_size: document.getElementById('subtitle-font-size').value,
+      subtitle_color: document.getElementById('subtitle-color').value,
+      subtitle_bg: document.getElementById('subtitle-bg').value,
+      subtitle_position: document.getElementById('subtitle-position').value,
+      crop_x: document.getElementById('crop-x-input').value,
+      crop_y: document.getElementById('crop-y-input').value,
+      crop_w: document.getElementById('crop-w-input').value,
+      crop_h: document.getElementById('crop-h-input').value,
+      url: document.querySelector('[name="url"]').value,
+      _dur: e > s ? _fmtTime(e - s) : '—',
+    };
+  }
+
+  window._addToQueue = function() {
+    if (!_validateClip()) return;
+    var state = _queueFormState();
+    _clipQueue.push(state);
+    _renderQueue();
+  };
+
+  function _renderQueue() {
+    var panel = document.getElementById('queue-panel');
+    var itemsEl = document.getElementById('queue-items');
+    var countEl = document.getElementById('queue-count');
+    countEl.textContent = _clipQueue.length;
+    panel.style.display = _clipQueue.length ? 'flex' : 'none';
+    itemsEl.innerHTML = '';
+    _clipQueue.forEach(function(item, idx) {
+      var el = document.createElement('div');
+      el.className = 'queue-item';
+      el.innerHTML =
+        '<div class="queue-item-info">' +
+        '<span class="queue-item-time">' + item.start_time + '–' + item.end_time + '</span>' +
+        '<span class="queue-item-fmt">' + item.output_format.toUpperCase() + '</span>' +
+        '<span class="queue-item-dur">' + item._dur + '</span>' +
+        '</div>' +
+        '<button type="button" class="queue-item-del" title="Remove">' +
+        '<i class="fa-solid fa-xmark"></i></button>';
+      el.querySelector('.queue-item-del').addEventListener('click', function() {
+        _clipQueue.splice(idx, 1);
+        _renderQueue();
+      });
+      itemsEl.appendChild(el);
+    });
+  }
+
+  window._exportAll = function() {
+    if (!_clipQueue.length) return;
+    var jobs = _clipQueue.slice();
+    _clipQueue.length = 0;
+    _renderQueue();
+    jobs.forEach(function(item) { _submitQueueItem(item); });
+  };
+
+  window._clearQueue = function() {
+    _clipQueue.length = 0;
+    _renderQueue();
+  };
+
+  function _submitQueueItem(item) {
+    var fd = new FormData();
+    fd.append('url', item.url);
+    fd.append('start_time', item.start_time);
+    fd.append('end_time', item.end_time);
+    fd.append('output_format', item.output_format);
+    fd.append('speed', item.speed);
+    if (item.include_subtitles) fd.append('include_subtitles', 'true');
+    fd.append('watermark_text', item.watermark_text || '');
+    fd.append('watermark_position', item.watermark_position || 'br');
+    fd.append('watermark_image_path', item.watermark_image_path || '');
+    fd.append('subtitle_font_size', item.subtitle_font_size || '24');
+    fd.append('subtitle_color', item.subtitle_color || '#ffffff');
+    fd.append('subtitle_bg', item.subtitle_bg || 'shadow');
+    fd.append('subtitle_position', item.subtitle_position || 'bottom');
+    if (item.crop_x) {
+      fd.append('crop_x', item.crop_x); fd.append('crop_y', item.crop_y);
+      fd.append('crop_w', item.crop_w); fd.append('crop_h', item.crop_h);
+    }
+    fetch('/clips', {method: 'POST', body: fd})
+      .then(function(res) { return res.text(); })
+      .then(function(html) {
+        var list = document.getElementById('jobs-list');
+        if (list) list.insertAdjacentHTML('afterbegin', html);
+      });
+  }
+
   // ── Format buttons ─────────────────────────────────────────────────────
   var _fmtInput = document.getElementById('output-format-input');
 
@@ -412,7 +832,10 @@
     if (imgInput) imgInput.disabled = !active || fmt === 'gif';
     var wfLabel = document.getElementById('wm-file-label');
     if (wfLabel) wfLabel.style.opacity = (!active || fmt === 'gif') ? '0.35' : '1';
+    if (active) _loadWatermarkHistory();
   });
+
+  _loadWatermarkHistory();
 
   // ── Crop editor ────────────────────────────────────────────────────────
   (function () {

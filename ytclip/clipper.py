@@ -168,6 +168,28 @@ def _atempo_chain(speed: float) -> str:
     return ",".join(parts)
 
 
+def _subtitle_force_style(font_size: int, color_hex: str, bg: str, position: str) -> str:
+    """Build ASS force_style string for ffmpeg subtitles filter."""
+    h = color_hex.lstrip("#")
+    if len(h) == 6:
+        r, g, b = h[0:2], h[2:4], h[4:6]
+        ass_color = f"&H00{b}{g}{r}".upper()
+    else:
+        ass_color = "&H00FFFFFF"
+    alignment = 2 if position == "bottom" else 8
+    if bg == "box":
+        border_style, back_color, outline = 4, "&H80000000", 0
+    elif bg == "shadow":
+        border_style, back_color, outline = 1, "&H80000000", 2
+    else:
+        border_style, back_color, outline = 1, "&H00000000", 0
+    return (
+        f"FontSize={font_size},PrimaryColour={ass_color},"
+        f"BorderStyle={border_style},BackColour={back_color},"
+        f"Outline={outline},Alignment={alignment},MarginV=20"
+    )
+
+
 def _crop_filter(crop: dict) -> str:
     return (
         f"crop=floor(iw*{crop['w']}/2)*2"
@@ -243,18 +265,33 @@ async def _apply_video_filters(
     watermark_text: str = "",
     watermark_image: Path | None = None,
     watermark_position: str = "br",
+    subtitle_file: Path | None = None,
+    subtitle_style: dict | None = None,
 ) -> Path:
-    """Apply crop, speed, watermark, and format conversion in a single ffmpeg pass."""
+    """Apply crop, speed, subtitle burn-in, watermark, and format conversion in one ffmpeg pass."""
     is_gif  = output_format == OutputFormat.GIF
     is_webp = output_format == OutputFormat.WEBP
     has_img = bool(watermark_image and watermark_image.exists()) and not is_gif
     has_txt = bool(watermark_text.strip())
+    # Subtitle burn-in: only for video formats (not gif/webp/audio)
+    has_sub = bool(subtitle_file and subtitle_file.exists()) and not is_gif and not is_webp
 
     vf: list[str] = []
     if crop:
         vf.append(_crop_filter(crop))
     if abs(speed - 1.0) > 0.001:
         vf.append(f"setpts={1.0 / speed:.6f}*PTS")
+    if has_sub:
+        ss = subtitle_style or {}
+        force_style = _subtitle_force_style(
+            int(ss.get("font_size", 24)),
+            str(ss.get("color", "#ffffff")),
+            str(ss.get("bg", "shadow")),
+            str(ss.get("position", "bottom")),
+        )
+        # Escape path for ffmpeg filter: backslash then colon
+        esc = str(subtitle_file).replace("\\", "\\\\").replace(":", "\\:")
+        vf.append(f"subtitles='{esc}':force_style='{force_style}'")
     if is_gif:
         vf.extend(["fps=15", "scale=480:-2:flags=lanczos"])
     elif is_webp:
@@ -358,6 +395,7 @@ async def create_clip(
     watermark_text: str = "",
     watermark_image: Path | None = None,
     watermark_position: str = "br",
+    subtitle_style: dict | None = None,
 ) -> tuple[Path, str]:
     """
     Download and trim a YouTube clip.
@@ -384,8 +422,9 @@ async def create_clip(
 
         if include_subtitles:
             base_opts["writesubtitles"] = True
-            base_opts["subtitleslangs"] = ["en", "en-orig"]
-            base_opts["embedsubtitles"] = True
+            base_opts["writeautomaticsub"] = True
+            base_opts["subtitleslangs"] = ["en", "en-orig", "en.*"]
+            # no embedsubtitles — we burn in via ffmpeg
 
         # Postprocessors for format conversion
         postprocessors: list[dict] = []
@@ -469,12 +508,27 @@ async def create_clip(
             except Exception as exc:
                 raise RuntimeError(f"Download failed: {exc}") from exc
 
+        # Find downloaded subtitle file if requested
+        subtitle_file: Path | None = None
+        if include_subtitles:
+            sub_exts = {".vtt", ".srt", ".ass", ".ssa"}
+            sub_files = [
+                f for f in tmp_dir.iterdir()
+                if f.suffix.lower() in sub_exts and f.is_file()
+            ]
+            if sub_files:
+                subtitle_file = sub_files[0]
+                logger.debug(f"Found subtitle file: {subtitle_file.name}")
+            else:
+                logger.debug("No subtitle file found after download")
+
         needs_filter = (
             crop is not None
             or abs(speed - 1.0) > 0.001
             or bool(watermark_text)
             or (watermark_image is not None and watermark_image.exists())
             or output_format in (OutputFormat.GIF, OutputFormat.WEBP)
+            or subtitle_file is not None
         )
 
         if needs_filter:
@@ -490,6 +544,8 @@ async def create_clip(
                 watermark_text=watermark_text,
                 watermark_image=watermark_image,
                 watermark_position=watermark_position,
+                subtitle_file=subtitle_file,
+                subtitle_style=subtitle_style,
             )
 
         progress_cb(90, "Saving clip...")

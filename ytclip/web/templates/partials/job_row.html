@@ -18,7 +18,20 @@
   es.onmessage = function (e) {
     var el = document.getElementById('progress-' + id);
     if (el) el.innerHTML = e.data;
-    if (e.data.indexOf('job-done') !== -1 || e.data.indexOf('job-error') !== -1) es.close();
+    if (e.data.indexOf('job-done') !== -1 || e.data.indexOf('job-error') !== -1) {
+      // inject share button after download button
+      var done = el.querySelector('.job-done');
+      if (done && !done.querySelector('.job-share-btn')) {
+        var shareBtn = document.createElement('a');
+        shareBtn.className = 'job-share-btn';
+        shareBtn.href = '/share/' + id;
+        shareBtn.target = '_blank';
+        shareBtn.title = 'Share';
+        shareBtn.innerHTML = '<i class="fa-solid fa-share-nodes"></i>';
+        done.appendChild(shareBtn);
+      }
+      es.close();
+    }
   };
   es.onerror = function () { es.close(); };
 })();

@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import json
+import uuid
 import aiosqlite
 from datetime import datetime, timezone
 from pathlib import Path
@@ -27,10 +29,31 @@ CREATE TABLE IF NOT EXISTS jobs (
 )
 """
 
+_CREATE_WATERMARK_HISTORY_TABLE = """
+CREATE TABLE IF NOT EXISTS watermark_history (
+    id TEXT PRIMARY KEY,
+    type TEXT NOT NULL,
+    value TEXT NOT NULL,
+    image_path TEXT,
+    used_at TEXT NOT NULL
+)
+"""
+
+_CREATE_PRESETS_TABLE = """
+CREATE TABLE IF NOT EXISTS presets (
+    id TEXT PRIMARY KEY,
+    name TEXT NOT NULL UNIQUE,
+    settings TEXT NOT NULL,
+    created_at TEXT NOT NULL
+)
+"""
+
 
 async def init_db(db_path: Path) -> None:
     async with aiosqlite.connect(db_path) as db:
         await db.execute(_CREATE_JOBS_TABLE)
+        await db.execute(_CREATE_WATERMARK_HISTORY_TABLE)
+        await db.execute(_CREATE_PRESETS_TABLE)
         await db.commit()
 
 
@@ -158,5 +181,86 @@ async def list_completed_jobs(db_path: Path, limit: int = 50, offset: int = 0) -
 async def delete_job(db_path: Path, job_id: str) -> bool:
     async with aiosqlite.connect(db_path) as db:
         cursor = await db.execute("DELETE FROM jobs WHERE id = ?", (job_id,))
+        await db.commit()
+        return cursor.rowcount > 0
+
+
+# ── Watermark history ────────────────────────────────────────────────────────
+
+async def save_watermark(
+    db_path: Path,
+    wm_type: str,
+    value: str,
+    image_path: str | None = None,
+    max_history: int = 5,
+) -> None:
+    now = datetime.now(timezone.utc).isoformat()
+    wm_id = str(uuid.uuid4())
+    async with aiosqlite.connect(db_path) as db:
+        # avoid duplicate text entries
+        if wm_type == "text":
+            await db.execute("DELETE FROM watermark_history WHERE type='text' AND value=?", (value,))
+        await db.execute(
+            "INSERT INTO watermark_history (id, type, value, image_path, used_at) VALUES (?,?,?,?,?)",
+            (wm_id, wm_type, value, image_path, now),
+        )
+        # prune oldest beyond limit
+        await db.execute(
+            """DELETE FROM watermark_history WHERE id NOT IN (
+                SELECT id FROM watermark_history ORDER BY used_at DESC LIMIT ?
+            )""",
+            (max_history,),
+        )
+        await db.commit()
+
+
+async def list_watermark_history(db_path: Path) -> list[dict]:
+    async with aiosqlite.connect(db_path) as db:
+        async with db.execute(
+            "SELECT id, type, value, image_path, used_at FROM watermark_history ORDER BY used_at DESC"
+        ) as cursor:
+            rows = await cursor.fetchall()
+            return [
+                {"id": r[0], "type": r[1], "value": r[2], "image_path": r[3], "used_at": r[4]}
+                for r in rows
+            ]
+
+
+async def delete_watermark(db_path: Path, wm_id: str) -> bool:
+    async with aiosqlite.connect(db_path) as db:
+        cursor = await db.execute("DELETE FROM watermark_history WHERE id=?", (wm_id,))
+        await db.commit()
+        return cursor.rowcount > 0
+
+
+# ── Presets ──────────────────────────────────────────────────────────────────
+
+async def list_presets(db_path: Path) -> list[dict]:
+    async with aiosqlite.connect(db_path) as db:
+        async with db.execute(
+            "SELECT id, name, settings, created_at FROM presets ORDER BY created_at DESC"
+        ) as cursor:
+            rows = await cursor.fetchall()
+            return [
+                {"id": r[0], "name": r[1], "settings": json.loads(r[2]), "created_at": r[3]}
+                for r in rows
+            ]
+
+
+async def save_preset(db_path: Path, name: str, settings: dict) -> dict:
+    now = datetime.now(timezone.utc).isoformat()
+    preset_id = str(uuid.uuid4())
+    async with aiosqlite.connect(db_path) as db:
+        await db.execute(
+            "INSERT OR REPLACE INTO presets (id, name, settings, created_at) VALUES (?,?,?,?)",
+            (preset_id, name, json.dumps(settings), now),
+        )
+        await db.commit()
+    return {"id": preset_id, "name": name, "settings": settings, "created_at": now}
+
+
+async def delete_preset(db_path: Path, preset_id: str) -> bool:
+    async with aiosqlite.connect(db_path) as db:
+        cursor = await db.execute("DELETE FROM presets WHERE id=?", (preset_id,))
         await db.commit()
         return cursor.rowcount > 0

@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="nord">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{{ job.video_title or "Clip" }} — ytclip</title>
+
+  <meta property="og:title" content="{{ job.video_title or 'Shared Clip' }}">
+  <meta property="og:type" content="video.other">
+  <meta property="og:video" content="{{ video_url }}">
+  <meta property="og:description" content="Clipped with ytclip · {{ duration }}">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/daisyui@4.12.10/dist/full.min.css" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>tailwind.config = { corePlugins: { preflight: false } }</script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" crossorigin="anonymous">
+  <link rel="icon" type="image/svg+xml" href="/static/favicon.svg">
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; }
+    body {
+      font-family: 'Inter', sans-serif;
+      background: oklch(var(--b2));
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      padding: 2rem 1rem 3rem;
+      gap: 1.5rem;
+    }
+    .share-card {
+      background: oklch(var(--b1));
+      border: 1px solid oklch(var(--b3));
+      border-radius: 1rem;
+      box-shadow: 0 4px 24px oklch(0 0 0 / 0.08);
+      width: 100%;
+      max-width: 760px;
+      overflow: hidden;
+    }
+    .share-video {
+      display: block;
+      width: 100%;
+      max-height: 480px;
+      background: #000;
+    }
+    .share-meta {
+      padding: 1.25rem 1.5rem 0.75rem;
+    }
+    .share-title {
+      font-size: 1.1rem;
+      font-weight: 600;
+      letter-spacing: -0.02em;
+      color: oklch(var(--bc));
+      margin: 0 0 0.5rem;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .share-badges {
+      display: flex;
+      gap: 0.5rem;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+    .share-badge {
+      font-size: 0.72rem;
+      font-family: 'JetBrains Mono', monospace;
+      background: oklch(var(--b2));
+      border: 1px solid oklch(var(--b3));
+      border-radius: 999px;
+      padding: 0.2rem 0.6rem;
+      color: oklch(var(--bc) / 0.55);
+      letter-spacing: 0.04em;
+      font-weight: 500;
+    }
+    .share-actions {
+      padding: 1rem 1.5rem 1.25rem;
+      border-top: 1px solid oklch(var(--b2));
+      display: flex;
+      gap: 0.625rem;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+    .share-label {
+      font-size: 0.72rem;
+      font-weight: 600;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: oklch(var(--bc) / 0.35);
+      margin-right: 0.25rem;
+    }
+    .soc-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      padding: 0.45rem 0.9rem;
+      border-radius: 0.5rem;
+      font-size: 0.82rem;
+      font-weight: 500;
+      font-family: inherit;
+      cursor: pointer;
+      border: 1px solid transparent;
+      text-decoration: none;
+      transition: opacity 0.15s, transform 0.1s;
+    }
+    .soc-btn:hover { opacity: 0.85; transform: translateY(-1px); }
+    .soc-btn:active { transform: translateY(0); }
+    .soc-btn-twitter  { background: #1a8cd8; color: #fff; }
+    .soc-btn-whatsapp { background: #25d366; color: #fff; }
+    .soc-btn-facebook { background: #1877f2; color: #fff; }
+    .soc-btn-copy {
+      background: oklch(var(--b2));
+      border-color: oklch(var(--b3));
+      color: oklch(var(--bc));
+    }
+    .soc-btn-download {
+      background: oklch(var(--su) / 1);
+      color: oklch(var(--suc) / 1);
+    }
+    .share-footer {
+      font-size: 0.75rem;
+      color: oklch(var(--bc) / 0.3);
+      text-align: center;
+    }
+    .share-footer a {
+      color: oklch(var(--p) / 0.7);
+      text-decoration: none;
+    }
+    .share-footer a:hover { text-decoration: underline; }
+    .share-brand {
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: oklch(var(--bc));
+      text-decoration: none;
+      letter-spacing: -0.03em;
+    }
+    .share-brand i { color: oklch(var(--p) / 0.9); }
+  </style>
+</head>
+<body>
+
+  <a href="/" class="share-brand">
+    <i class="fa-solid fa-scissors"></i> ytclip
+  </a>
+
+  <div class="share-card">
+    {% set fmt = job.output_format.value.lower() %}
+    {% if fmt in ('mp4', 'mkv', 'gif', 'webp') %}
+    <video class="share-video" controls preload="metadata"
+           {% if fmt == 'gif' %}autoplay loop muted{% endif %}>
+      <source src="{{ video_url }}" type="{% if fmt == 'mp4' %}video/mp4{% elif fmt == 'mkv' %}video/x-matroska{% elif fmt == 'gif' %}image/gif{% elif fmt == 'webp' %}image/webp{% endif %}">
+      Your browser does not support the video tag.
+    </video>
+    {% elif fmt in ('mp3', 'aac') %}
+    <div style="padding: 2rem; background: oklch(var(--b2)); display:flex; align-items:center; gap:1rem;">
+      <i class="fa-solid fa-music fa-2x" style="color: oklch(var(--p) / 0.7);"></i>
+      <audio controls style="flex: 1;">
+        <source src="{{ video_url }}" type="{% if fmt == 'mp3' %}audio/mpeg{% else %}audio/aac{% endif %}">
+      </audio>
+    </div>
+    {% endif %}
+
+    <div class="share-meta">
+      <p class="share-title">{{ job.video_title or "Untitled Clip" }}</p>
+      <div class="share-badges">
+        <span class="share-badge"><i class="fa-regular fa-clock" style="font-size:.65rem; margin-right:.2rem"></i>{{ duration }}</span>
+        <span class="share-badge">{{ job.output_format.value.upper() }}</span>
+      </div>
+    </div>
+
+    <div class="share-actions">
+      <span class="share-label">Share</span>
+
+      <a class="soc-btn soc-btn-twitter"
+         href="https://twitter.com/intent/tweet?url={{ share_url | urlencode }}&text={{ (job.video_title or 'Check this clip') | urlencode }}"
+         target="_blank" rel="noopener">
+        <i class="fa-brands fa-x-twitter"></i> Twitter
+      </a>
+
+      <a class="soc-btn soc-btn-whatsapp"
+         href="https://wa.me/?text={{ ((job.video_title or 'Check this clip') ~ ' ' ~ share_url) | urlencode }}"
+         target="_blank" rel="noopener">
+        <i class="fa-brands fa-whatsapp"></i> WhatsApp
+      </a>
+
+      <a class="soc-btn soc-btn-facebook"
+         href="https://www.facebook.com/sharer/sharer.php?u={{ share_url | urlencode }}"
+         target="_blank" rel="noopener">
+        <i class="fa-brands fa-facebook"></i> Facebook
+      </a>
+
+      <button class="soc-btn soc-btn-copy" id="copy-btn" onclick="_copyLink()">
+        <i class="fa-regular fa-copy" id="copy-icon"></i>
+        <span id="copy-label">Copy link</span>
+      </button>
+
+      <a class="soc-btn soc-btn-download" href="{{ video_url }}" download="{{ job.output_filename or 'clip' }}">
+        <i class="fa-solid fa-download"></i> Download
+      </a>
+    </div>
+  </div>
+
+  <p class="share-footer">
+    Clipped with <a href="/">ytclip</a> &middot; self-hosted &middot;
+    <a href="https://github.com/zeeshanjan82/ytclip" target="_blank" rel="noopener">GitHub</a>
+  </p>
+
+  <script>
+    function _copyLink() {
+      var url = {{ share_url | tojson }};
+      navigator.clipboard.writeText(url).then(function() {
+        document.getElementById('copy-label').textContent = 'Copied!';
+        document.getElementById('copy-icon').className = 'fa-solid fa-check';
+        setTimeout(function() {
+          document.getElementById('copy-label').textContent = 'Copy link';
+          document.getElementById('copy-icon').className = 'fa-regular fa-copy';
+        }, 2000);
+      }).catch(function() {
+        prompt('Copy this link:', url);
+      });
+    }
+  </script>
+
+</body>
+</html>

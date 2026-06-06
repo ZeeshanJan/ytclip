@@ -23,6 +23,7 @@
         <th>Format</th>
         <th>Date</th>
         <th></th>
+        <th></th>
       </tr>
     </thead>
     <tbody>
@@ -53,6 +54,13 @@
         <td><span class="lib-format-badge">{{ job.output_format.value.upper() }}</span></td>
         <td style="font-size: 0.78rem; color: oklch(var(--bc) / 0.38);">
           {{ job.created_at.strftime("%b %d, %H:%M") if job.created_at else "—" }}
+        </td>
+        <td>
+          {% if item.file_exists %}
+          <a class="lib-share-btn" href="/share/{{ job.id }}" target="_blank" title="Share">
+            <i class="fa-solid fa-share-nodes"></i>
+          </a>
+          {% endif %}
         </td>
         <td>
           <button class="lib-delete-btn"

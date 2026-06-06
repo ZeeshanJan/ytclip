@@ -15,7 +15,7 @@ from sse_starlette.sse import EventSourceResponse
 
 from ...config import Config, get_config
 from ...clipper import create_clip
-from ...database import delete_job, get_job, insert_job, update_job_status
+from ...database import delete_job, get_job, insert_job, save_watermark, update_job_status
 from ...jobs import JobRunner, ProgressBus, get_job_runner, get_progress_bus
 from ...models import ClipJob, JobStatus, OutputFormat, parse_time, format_time
 
@@ -40,6 +40,11 @@ async def create_clip_job(
     watermark_text: Annotated[str, Form()] = "",
     watermark_position: Annotated[str, Form()] = "br",
     watermark_image: Annotated[UploadFile | None, File()] = None,
+    watermark_image_path: Annotated[str, Form()] = "",
+    subtitle_font_size: Annotated[int, Form()] = 24,
+    subtitle_color: Annotated[str, Form()] = "#ffffff",
+    subtitle_bg: Annotated[str, Form()] = "shadow",
+    subtitle_position: Annotated[str, Form()] = "bottom",
     config: Config = Depends(get_config),
     runner: JobRunner = Depends(get_job_runner),
 ):
@@ -68,12 +73,41 @@ async def create_clip_job(
 
     wm_image_path: Path | None = None
     wm_tmp_dir: str | None = None
+    _saved_wm_image_path: str | None = None
+
     if watermark_image and watermark_image.filename:
         wm_tmp_dir = tempfile.mkdtemp(prefix="ytclip_wm_")
         suffix = Path(watermark_image.filename).suffix or ".png"
         wm_image_path = Path(wm_tmp_dir) / f"watermark{suffix}"
         with open(wm_image_path, "wb") as fh:
             shutil.copyfileobj(watermark_image.file, fh)
+        # persist to watermarks store
+        wm_store_dir = config.db_path.parent / "watermarks"
+        wm_store_dir.mkdir(parents=True, exist_ok=True)
+        stored_name = f"{uuid.uuid4().hex[:8]}_{watermark_image.filename}"
+        stored_path = wm_store_dir / stored_name
+        shutil.copy2(wm_image_path, stored_path)
+        _saved_wm_image_path = str(stored_path)
+    elif watermark_image_path:
+        p = Path(watermark_image_path)
+        if p.exists():
+            wm_image_path = p
+
+    if watermark_text.strip():
+        await save_watermark(config.db_path, "text", watermark_text.strip())
+    if _saved_wm_image_path and watermark_image and watermark_image.filename:
+        await save_watermark(
+            config.db_path, "image",
+            watermark_image.filename,
+            image_path=_saved_wm_image_path,
+        )
+
+    subtitle_style = {
+        "font_size": subtitle_font_size,
+        "color": subtitle_color,
+        "bg": subtitle_bg,
+        "position": subtitle_position,
+    }
 
     job = ClipJob(
         id=str(uuid.uuid4()),
@@ -116,6 +150,7 @@ async def create_clip_job(
                     watermark_text=watermark_text,
                     watermark_image=wm_image_path,
                     watermark_position=watermark_position,
+                    subtitle_style=subtitle_style,
                     progress_cb=progress_cb,
                 )
             finally:

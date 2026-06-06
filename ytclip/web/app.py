@@ -18,7 +18,10 @@ from ..updater import maybe_update_ytdlp
 from .auth import make_login_router, require_auth
 from .routes.clips import router as clips_router
 from .routes.library import router as library_router
+from .routes.presets import router as presets_router
+from .routes.share import router as share_router
 from .routes.video import router as video_router
+from .routes.watermarks import router as watermarks_router
 
 _WEB_DIR = Path(__file__).parent
 templates = Jinja2Templates(directory=str(_WEB_DIR / "templates"))
@@ -83,6 +86,10 @@ def create_app(config: Config | None = None) -> FastAPI:
     app.include_router(video_router, dependencies=dependencies)
     app.include_router(clips_router, dependencies=dependencies)
     app.include_router(library_router, dependencies=dependencies)
+    app.include_router(presets_router, dependencies=dependencies)
+    app.include_router(watermarks_router, dependencies=dependencies)
+    # share routes are always public (no auth dependency)
+    app.include_router(share_router)
 
     @app.get("/")
     async def landing(request: Request):
