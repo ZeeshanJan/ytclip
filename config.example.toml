@@ -1,0 +1,28 @@
+[general]
+output_dir = "~/yt-clips"
+max_clip_duration = 0          # 0 = no limit (seconds)
+max_concurrent_jobs = 2
+log_level = "INFO"             # DEBUG | INFO | WARNING | ERROR
+log_file = ""                  # empty = stdout only
+
+[quality]
+max_quality = "best"           # "best" | "2160p" | "1080p" | "720p" | "480p"
+prefer_segments_only = false   # true = no full-download fallback (faster but may fail)
+
+[output]
+filename_template = "{title}_{start}-{end}_{id}"
+default_format = "mp4"         # "mp4" | "mkv" | "mp3" | "aac"
+include_subtitles = false
+
+[auth]
+enabled = false
+password = ""                  # required when enabled = true
+
+[ytdlp]
+auto_update = true
+auto_update_interval_hours = 24
+cookies_file = ""              # path to Netscape cookies file (for age-restricted videos)
+
+[server]
+host = "127.0.0.1"
+port = 8000

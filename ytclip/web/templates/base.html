@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="nord">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}ytclip{% endblock %}</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+  <link href="https://cdn.jsdelivr.net/npm/daisyui@4.12.10/dist/full.min.css" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>tailwind.config = { corePlugins: { preflight: false } }</script>
+
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer">
+
+  <link rel="stylesheet" href="/static/style.css">
+  <script src="https://unpkg.com/htmx.org@2.0.4/dist/htmx.min.js" defer></script>
+
+  <!-- ── YouTube IFrame API ─────────────────────────────────────────────── -->
+  <script>
+    var _ytPlayer = null;
+
+    window.onYouTubeIframeAPIReady = function () { _ytInitPlayer(); };
+
+    function _ytInitPlayer() {
+      var el = document.getElementById('yt-iframe');
+      if (!el || !window.YT || !window.YT.Player) return;
+      _ytPlayer = new YT.Player('yt-iframe', {
+        events: {
+          onReady: function () {
+            document.querySelectorAll('.yt-set-btn').forEach(function (b) {
+              b.removeAttribute('disabled');
+            });
+            var tries = 0;
+            (function poll() {
+              var dur = _ytPlayer ? (_ytPlayer.getDuration() || 0) : 0;
+              if (dur > 0) {
+                if (typeof window._onYTReady === 'function') window._onYTReady(dur);
+              } else if (tries++ < 30) {
+                setTimeout(poll, 200);
+              }
+            })();
+          },
+          onError: function (e) {
+            if (e.data === 100 || e.data === 101 || e.data === 150) {
+              _ytPlayer = null;
+              var wrapper = document.querySelector('.yt-player-wrapper');
+              if (wrapper) {
+                wrapper.outerHTML =
+                  '<div class="no-preview-card">' +
+                  '<i class="fa-solid fa-film"></i>' +
+                  '<p>Preview unavailable</p>' +
+                  '<span>Embedding is blocked by the content owner — you can still create clips below.</span>' +
+                  '</div>';
+              }
+              document.querySelectorAll('.yt-set-btn').forEach(function (b) { b.style.display = 'none'; });
+            }
+          }
+        }
+      });
+    }
+
+    document.addEventListener('htmx:afterSettle', function () {
+      _ytPlayer = null;
+      if (window.YT && window.YT.Player) _ytInitPlayer();
+    });
+
+    function _fmtTime(s) {
+      s = Math.floor(Math.max(0, s));
+      var h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60), sec = s % 60;
+      if (h > 0) return h + ':' + String(m).padStart(2,'0') + ':' + String(sec).padStart(2,'0');
+      return m + ':' + String(sec).padStart(2,'0');
+    }
+
+    function _parseTime(str) {
+      str = (str || '').trim();
+      var p = str.split(':');
+      if (p.length === 1) return parseFloat(p[0]) || 0;
+      if (p.length === 2) return parseInt(p[0]) * 60 + parseFloat(p[1]);
+      return parseInt(p[0]) * 3600 + parseInt(p[1]) * 60 + parseFloat(p[2]);
+    }
+
+    function ytSetTime(inputId, sliderId) {
+      if (!_ytPlayer || typeof _ytPlayer.getCurrentTime !== 'function') return;
+      var t = _ytPlayer.getCurrentTime();
+      var inp = document.getElementById(inputId);
+      var sld = document.getElementById(sliderId);
+      if (inp) inp.value = _fmtTime(t);
+      if (sld) { sld.value = t; _updateDualFill(); }
+    }
+
+    function _updateDualFill() {
+      var s = document.getElementById('start-slider');
+      var e = document.getElementById('end-slider');
+      var f = document.getElementById('range-fill');
+      if (!s || !e || !f) return;
+      var max = parseFloat(s.max) || 1;
+      var lo  = parseFloat(s.value) / max * 100;
+      var hi  = parseFloat(e.value) / max * 100;
+      f.style.left  = lo + '%';
+      f.style.width = (hi - lo) + '%';
+    }
+  </script>
+  <script src="https://www.youtube.com/iframe_api"></script>
+</head>
+
+<body>
+
+  <header class="site-header">
+    <div class="header-inner">
+      <a href="/" class="brand" title="ytclip home">
+        <i class="fa-solid fa-scissors"></i>
+        ytclip
+      </a>
+      <nav class="header-nav">
+        <a href="/app" class="nav-item {% if request.url.path == '/app' %}active{% endif %}">
+          <i class="fa-solid fa-circle-play"></i> Clip
+        </a>
+        <a href="/library" class="nav-item {% if request.url.path == '/library' %}active{% endif %}">
+          <i class="fa-solid fa-film"></i> Library
+        </a>
+        {% if show_logout %}
+        <form method="post" action="/logout">
+          <button type="submit" class="nav-item">
+            <i class="fa-solid fa-right-from-bracket"></i> Logout
+          </button>
+        </form>
+        {% endif %}
+      </nav>
+    </div>
+  </header>
+
+  <main class="site-main">
+    {% block content %}{% endblock %}
+  </main>
+
+</body>
+</html>

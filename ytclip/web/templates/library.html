@@ -1,0 +1,98 @@
+{% extends "base.html" %}
+{% block title %}ytclip — Library{% endblock %}
+{% block content %}
+
+<div class="lib-header">
+  <h1 class="lib-header-title" style="font-size: 1.5rem; font-weight: 700; letter-spacing: -0.03em;">
+    <i class="fa-solid fa-film" style="color: oklch(var(--p) / 0.7); font-size: 1.2rem; margin-right: 0.375rem;"></i>
+    Library
+  </h1>
+  <a href="/" class="btn btn-sm btn-outline gap-2" style="font-family: inherit; font-weight: 500;">
+    <i class="fa-solid fa-plus"></i> New Clip
+  </a>
+</div>
+
+{% if clips %}
+<div class="card-clean" style="overflow: hidden;">
+  <table class="lib-table">
+    <thead>
+      <tr>
+        <th>Title</th>
+        <th>File</th>
+        <th>Duration</th>
+        <th>Format</th>
+        <th>Date</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for item in clips %}
+      {% set job = item.job %}
+      <tr id="library-row-{{ job.id }}">
+        <td style="max-width: 220px;">
+          <span style="display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 500;"
+                title="{{ job.video_title or '' }}">
+            {{ job.video_title or "Unknown" }}
+          </span>
+        </td>
+        <td>
+          {% if item.file_exists %}
+            <a class="mono"
+               style="font-size: 0.72rem; color: oklch(var(--p) / 0.85); text-decoration: none;"
+               href="/clips/{{ job.id }}/download"
+               download="{{ job.output_filename }}"
+               title="{{ job.output_filename }}">
+              <i class="fa-solid fa-download" style="font-size: 0.65rem; margin-right: 0.25rem;"></i>
+              {{ (job.output_filename or "—")[:28] }}{% if (job.output_filename or "")|length > 28 %}…{% endif %}
+            </a>
+          {% else %}
+            <span style="font-size: 0.8rem; color: oklch(var(--bc) / 0.25); font-style: italic;">missing</span>
+          {% endif %}
+        </td>
+        <td class="mono" style="font-size: 0.85rem;">{{ item.duration }}</td>
+        <td><span class="lib-format-badge">{{ job.output_format.value.upper() }}</span></td>
+        <td style="font-size: 0.78rem; color: oklch(var(--bc) / 0.38);">
+          {{ job.created_at.strftime("%b %d, %H:%M") if job.created_at else "—" }}
+        </td>
+        <td>
+          <button class="lib-delete-btn"
+                  hx-delete="/clips/{{ job.id }}"
+                  hx-target="#library-row-{{ job.id }}"
+                  hx-swap="outerHTML"
+                  hx-confirm="Delete this clip?"
+                  title="Delete">
+            <i class="fa-solid fa-trash-can"></i>
+          </button>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+{% if has_prev or has_next %}
+<div class="lib-pagination">
+  {% if has_prev %}
+  <a class="btn btn-ghost btn-sm gap-1" href="/library?page={{ page-1 }}">
+    <i class="fa-solid fa-chevron-left"></i> Prev
+  </a>
+  {% endif %}
+  {% if has_next %}
+  <a class="btn btn-ghost btn-sm gap-1" href="/library?page={{ page+1 }}">
+    Next <i class="fa-solid fa-chevron-right"></i>
+  </a>
+  {% endif %}
+</div>
+{% endif %}
+
+{% else %}
+<div class="card-clean lib-empty">
+  <i class="fa-regular fa-folder-open"></i>
+  <p>No clips yet</p>
+  <a href="/" style="font-size: 0.85rem; color: oklch(var(--p) / 1); text-decoration: none; font-weight: 500;">
+    Create your first clip →
+  </a>
+</div>
+{% endif %}
+
+{% endblock %}

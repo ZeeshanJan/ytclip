@@ -1,0 +1,13 @@
+services:
+  ytclip:
+    build: .
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./clips:/clips
+      - ./config:/config
+    environment:
+      - YTCLIP_OUTPUT_DIR=/clips
+      # Optional: mount a config file at ./config/config.toml and uncomment:
+      # - YTCLIP_CONFIG_FILE=/config/config.toml
+    restart: unless-stopped

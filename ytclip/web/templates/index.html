@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+{% block title %}ytclip{% endblock %}
+{% block content %}
+
+<div class="flex flex-col gap-5">
+
+  <!-- Page header -->
+  <div class="page-header">
+    <h1>Create a clip</h1>
+    <p>Paste a YouTube URL, set in/out points, and download at source quality.</p>
+  </div>
+
+  <!-- URL input card -->
+  <div class="card-clean" style="padding: 1.125rem 1.25rem;">
+    <form class="url-form"
+          hx-post="/video-info"
+          hx-target="#player-section"
+          hx-swap="innerHTML"
+          hx-indicator="#load-spinner">
+      <div class="url-input-wrap">
+        <i class="fa-brands fa-youtube url-input-icon"></i>
+        <input type="text"
+               name="url"
+               placeholder="https://youtube.com/watch?v=…"
+               autocomplete="off"
+               autofocus
+               class="url-input">
+      </div>
+      <button class="btn-load" type="submit">
+        <span id="load-spinner" class="htmx-indicator loading loading-spinner loading-xs"></span>
+        <i class="fa-solid fa-arrow-right htmx-not-loading"></i>
+        Load
+      </button>
+    </form>
+  </div>
+
+  <!-- Player + clip form (injected by HTMX) -->
+  <div id="player-section"></div>
+
+  <!-- Active jobs -->
+  <div id="jobs-list" class="flex flex-col gap-3"></div>
+
+</div>
+
+<style>
+  /* hide the arrow icon while loading */
+  .htmx-request .htmx-not-loading { display: none; }
+</style>
+
+{% endblock %}

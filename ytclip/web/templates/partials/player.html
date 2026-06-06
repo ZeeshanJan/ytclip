@@ -1,0 +1,235 @@
+<div class="card-clean" style="overflow: hidden;">
+
+  <!-- ── Player ──────────────────────────────────────────────────────── -->
+  <div class="yt-player-wrapper">
+    <iframe id="yt-iframe"
+            src="https://www.youtube.com/embed/{{ video_id }}?enablejsapi=1"
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+            allowfullscreen>
+    </iframe>
+  </div>
+
+  <!-- ── Clip controls ───────────────────────────────────────────────── -->
+  <div class="controls-panel">
+
+    <form hx-post="/clips"
+          hx-target="#jobs-list"
+          hx-swap="afterbegin"
+          hx-indicator="#clip-spinner"
+          onsubmit="return _validateClip()">
+
+      <input type="hidden" name="url" value="{{ url }}">
+
+      <div class="flex flex-col gap-4">
+
+        <!-- ── Timeline ──────────────────────────────────────────────── -->
+        <div class="flex flex-col gap-2">
+          <div class="flex justify-between items-center">
+            <span class="section-label">Timeline</span>
+            <span id="slider-hint" class="text-xs" style="color: oklch(var(--bc) / 0.3); font-style: italic;">Loading…</span>
+          </div>
+
+          <div class="dual-range-wrapper">
+            <div class="dual-range-track"></div>
+            <div class="dual-range-fill" id="range-fill"></div>
+            <input type="range" class="dual-range-input" id="start-slider" min="0" max="100" value="0"   step="0.1" disabled>
+            <input type="range" class="dual-range-input" id="end-slider"   min="0" max="100" value="100" step="0.1" disabled>
+          </div>
+
+          <div class="slider-labels">
+            <span id="slider-start-label">0:00</span>
+            <span id="slider-end-label">—</span>
+          </div>
+        </div>
+
+        <!-- ── Start / End inputs ──────────────────────────────────── -->
+        <div class="time-inputs">
+
+          <div class="time-field">
+            <label>Start</label>
+            <div class="time-input-row">
+              <input id="start-display" name="start_time" type="text"
+                     value="0:00" placeholder="0:00">
+              <button type="button" class="time-set-btn yt-set-btn"
+                      disabled title="Capture current playback position"
+                      onclick="ytSetTime('start-display','start-slider')">
+                <i class="fa-regular fa-clock"></i>
+              </button>
+            </div>
+          </div>
+
+          <div class="time-field">
+            <label>End</label>
+            <div class="time-input-row">
+              <input id="end-display" name="end_time" type="text"
+                     value="" placeholder="1:30">
+              <button type="button" class="time-set-btn yt-set-btn"
+                      disabled title="Capture current playback position"
+                      onclick="ytSetTime('end-display','end-slider')">
+                <i class="fa-regular fa-clock"></i>
+              </button>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- ── Error ──────────────────────────────────────────────── -->
+        <p id="clip-error" class="clip-error">
+          <i class="fa-solid fa-triangle-exclamation"></i>
+          <span id="clip-error-msg"></span>
+        </p>
+
+        <!-- ── Options ────────────────────────────────────────────── -->
+        <div class="options-row">
+          <div class="flex flex-col gap-1">
+            <span class="section-label">Format</span>
+            <select name="output_format" class="select select-bordered select-sm" style="font-family: inherit;">
+              <option value="mp4" {% if default_format=="mp4" %}selected{% endif %}>MP4</option>
+              <option value="mkv" {% if default_format=="mkv" %}selected{% endif %}>MKV — source quality</option>
+              <option value="mp3" {% if default_format=="mp3" %}selected{% endif %}>MP3 — audio only</option>
+              <option value="aac" {% if default_format=="aac" %}selected{% endif %}>AAC — audio only</option>
+            </select>
+          </div>
+
+          <div class="flex flex-col gap-1 justify-end" style="padding-bottom: 0.125rem;">
+            <span class="section-label">Options</span>
+            <label class="subtitle-toggle">
+              <input type="checkbox" name="include_subtitles" value="true"
+                     class="checkbox checkbox-sm"
+                     {% if include_subtitles %}checked{% endif %}>
+              Subtitles
+            </label>
+          </div>
+        </div>
+
+        <!-- ── Clip duration summary ──────────────────────────────── -->
+        <div class="clip-summary">
+          <span class="clip-summary-label">
+            <i class="fa-regular fa-clock"></i> Clip duration
+          </span>
+          <span id="clip-duration-display" class="clip-summary-value">—</span>
+        </div>
+
+        <!-- ── Submit ─────────────────────────────────────────────── -->
+        <button class="btn-create" type="submit">
+          <span id="clip-spinner" class="htmx-indicator loading loading-spinner loading-xs"></span>
+          <i class="fa-solid fa-scissors htmx-not-creating"></i>
+          Create Clip
+        </button>
+
+      </div>
+    </form>
+  </div>
+
+</div>
+
+<style>
+  .htmx-request .htmx-not-creating { display: none; }
+</style>
+
+<script>
+(function () {
+  var startSlider = document.getElementById('start-slider');
+  var endSlider   = document.getElementById('end-slider');
+  var startInput  = document.getElementById('start-display');
+  var endInput    = document.getElementById('end-display');
+  var startLabel  = document.getElementById('slider-start-label');
+  var endLabel    = document.getElementById('slider-end-label');
+  var hint        = document.getElementById('slider-hint');
+  var durationEl  = document.getElementById('clip-duration-display');
+
+  function _fmtTime(s) {
+    s = Math.floor(Math.max(0, parseFloat(s) || 0));
+    var h = Math.floor(s/3600), m = Math.floor((s%3600)/60), sec = s%60;
+    if (h > 0) return h+':'+String(m).padStart(2,'0')+':'+String(sec).padStart(2,'0');
+    return m+':'+String(sec).padStart(2,'0');
+  }
+
+  function _parseTime(str) {
+    str = (str||'').trim();
+    var p = str.split(':');
+    if (p.length===1) return parseFloat(p[0])||0;
+    if (p.length===2) return parseInt(p[0])*60+parseFloat(p[1]);
+    return parseInt(p[0])*3600+parseInt(p[1])*60+parseFloat(p[2]);
+  }
+
+  function _updateClipDuration() {
+    if (!durationEl) return;
+    var s = _parseTime(startInput.value);
+    var e = _parseTime(endInput.value);
+    var diff = e - s;
+    durationEl.textContent = diff > 0 ? _fmtTime(diff) : '—';
+  }
+
+  function _initSlider(duration) {
+    if (!duration || duration <= 0) return;
+    startSlider.max   = duration;
+    endSlider.max     = duration;
+    startSlider.value = 0;
+    endSlider.value   = duration;
+    startSlider.removeAttribute('disabled');
+    endSlider.removeAttribute('disabled');
+    endInput.value         = _fmtTime(duration);
+    startLabel.textContent = '0:00';
+    endLabel.textContent   = _fmtTime(duration);
+    if (hint) hint.textContent = 'Drag handles or type a time';
+    _updateDualFill();
+    _updateClipDuration();
+  }
+
+  var _serverDuration = {{ video_duration | float }};
+  _initSlider(_serverDuration);
+
+  window._onYTReady = function (duration) { _initSlider(duration); };
+
+  startSlider.addEventListener('input', function () {
+    var sv = parseFloat(startSlider.value);
+    var ev = parseFloat(endSlider.value);
+    if (sv >= ev - 0.5) startSlider.value = Math.max(0, ev - 0.5);
+    startInput.value = _fmtTime(startSlider.value);
+    startLabel.textContent = _fmtTime(startSlider.value);
+    _updateDualFill();
+    _updateClipDuration();
+  });
+
+  endSlider.addEventListener('input', function () {
+    var sv = parseFloat(startSlider.value);
+    var ev = parseFloat(endSlider.value);
+    if (ev <= sv + 0.5) endSlider.value = Math.min(parseFloat(endSlider.max), sv + 0.5);
+    endInput.value = _fmtTime(endSlider.value);
+    endLabel.textContent = _fmtTime(endSlider.value);
+    _updateDualFill();
+    _updateClipDuration();
+  });
+
+  startInput.addEventListener('input', function () {
+    var t = _parseTime(startInput.value);
+    if (!isNaN(t)) { startSlider.value = t; _updateDualFill(); _updateClipDuration(); }
+  });
+
+  endInput.addEventListener('input', function () {
+    var t = _parseTime(endInput.value);
+    if (!isNaN(t)) { endSlider.value = t; _updateDualFill(); _updateClipDuration(); }
+  });
+
+  window._validateClip = function () {
+    var errWrap = document.getElementById('clip-error');
+    var errMsg  = document.getElementById('clip-error-msg');
+    var end = endInput.value.trim();
+    if (!end) {
+      errMsg.textContent = 'Please enter an end time.';
+      errWrap.classList.add('visible');
+      return false;
+    }
+    var s = _parseTime(startInput.value);
+    var e = _parseTime(end);
+    if (s >= e) {
+      errMsg.textContent = 'Start time must be before end time.';
+      errWrap.classList.add('visible');
+      return false;
+    }
+    errWrap.classList.remove('visible');
+    return true;
+  };
+})();
+</script>

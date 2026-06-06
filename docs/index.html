@@ -1,0 +1,720 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ytclip — Self-hosted YouTube clip creator</title>
+  <meta name="description" content="Self-hosted web app for creating clips from YouTube videos at source quality. No cloud. No subscription. Runs on your hardware.">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer">
+
+  <style>
+    :root {
+      --bg:           #f7f6f3;
+      --surface:      #ffffff;
+      --border:       #e4e2de;
+      --border-light: #eeece8;
+      --text:         #1c1917;
+      --muted:        #78716c;
+      --faint:        #a8a29e;
+      --primary:      #5e81ac;
+      --primary-d:    #4a6f98;
+      --primary-bg:   #ebf1f8;
+      --primary-xl:   #f4f7fb;
+      --radius-s:     8px;
+      --radius-m:     14px;
+      --radius-l:     20px;
+      --shadow-s:     0 1px 3px rgba(0,0,0,.06),0 1px 2px rgba(0,0,0,.04);
+      --shadow-m:     0 4px 12px rgba(0,0,0,.08),0 2px 4px rgba(0,0,0,.04);
+      --shadow-l:     0 12px 40px rgba(0,0,0,.1),0 4px 12px rgba(0,0,0,.06);
+    }
+
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    html{scroll-behavior:smooth}
+    body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--text);line-height:1.6;-webkit-font-smoothing:antialiased}
+    a{text-decoration:none;color:inherit}
+    img{display:block;max-width:100%}
+
+    /* ── LOGO SVG ANIMATION ───────────────────────────── */
+    .logo-svg #upper-arm{transform-origin:40px 40px;animation:snip-upper 3.5s ease-in-out 0.8s infinite}
+    .logo-svg #lower-arm{transform-origin:40px 40px;animation:snip-lower 3.5s ease-in-out 0.8s infinite}
+    .logo-svg-sm #upper-arm{transform-origin:40px 40px;animation:snip-upper 3.5s ease-in-out 0.8s infinite}
+    .logo-svg-sm #lower-arm{transform-origin:40px 40px;animation:snip-lower 3.5s ease-in-out 0.8s infinite}
+
+    @keyframes snip-upper{0%,55%,100%{transform:rotate(0deg)}72%{transform:rotate(-15deg)}82%{transform:rotate(2deg)}90%{transform:rotate(0deg)}}
+    @keyframes snip-lower{0%,55%,100%{transform:rotate(0deg)}72%{transform:rotate(15deg)}82%{transform:rotate(-2deg)}90%{transform:rotate(0deg)}}
+    @keyframes logo-float{0%,100%{transform:translateY(0)}50%{transform:translateY(-7px)}}
+
+    /* ── NAV ──────────────────────────────────────────── */
+    .nav{position:sticky;top:0;z-index:100;background:rgba(247,246,243,.9);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border-bottom:1px solid var(--border)}
+    .nav-inner{max-width:1100px;margin:0 auto;padding:0 2rem;height:62px;display:flex;align-items:center;justify-content:space-between}
+    .nav-brand{display:flex;align-items:center;gap:10px;font-size:1.05rem;font-weight:700;letter-spacing:-.03em}
+    .nav-actions{display:flex;align-items:center;gap:8px}
+
+    .btn-ghost-sm{display:inline-flex;align-items:center;gap:6px;padding:8px 14px;border-radius:var(--radius-s);font-size:.875rem;font-weight:500;font-family:inherit;color:var(--muted);background:transparent;border:none;cursor:pointer;transition:background .12s,color .12s}
+    .btn-ghost-sm:hover{background:var(--border);color:var(--text)}
+
+    .btn-pill{display:inline-flex;align-items:center;gap:8px;padding:9px 20px;border-radius:var(--radius-m);font-size:.875rem;font-weight:600;font-family:inherit;color:#fff;background:var(--primary);border:none;cursor:pointer;transition:background .15s,transform .1s;box-shadow:0 2px 8px rgba(94,129,172,.35)}
+    .btn-pill:hover{background:var(--primary-d);transform:translateY(-1px)}
+    .btn-pill:active{transform:scale(.98)}
+
+    /* ── HERO ─────────────────────────────────────────── */
+    .hero{text-align:center;padding:6.5rem 2rem 4rem;max-width:1100px;margin:0 auto}
+    .hero-logo{margin-bottom:2.25rem;display:flex;justify-content:center}
+    .hero-logo .logo-svg{width:88px;height:88px;filter:drop-shadow(0 8px 28px rgba(94,129,172,.38));animation:logo-float 3.5s ease-in-out infinite}
+    .hero h1{font-size:clamp(2.5rem,6vw,4.5rem);font-weight:800;letter-spacing:-.045em;line-height:1.08;margin-bottom:1.25rem}
+    .hero h1 .cut{color:var(--primary)}
+    .hero-sub{font-size:1.1rem;color:var(--muted);max-width:500px;margin:0 auto 2rem;line-height:1.7}
+    .hero-tags{display:flex;justify-content:center;flex-wrap:wrap;gap:7px;margin-bottom:2.25rem}
+    .tag{display:inline-flex;align-items:center;gap:5px;padding:5px 11px;background:var(--surface);border:1px solid var(--border);border-radius:9999px;font-size:.73rem;font-weight:500;color:var(--muted)}
+    .tag i{font-size:.6rem;color:var(--primary)}
+    .hero-cta{display:flex;justify-content:center;gap:12px;flex-wrap:wrap}
+
+    .btn-hero{display:inline-flex;align-items:center;gap:10px;padding:14px 30px;background:var(--primary);color:#fff;border-radius:var(--radius-m);font-size:1rem;font-weight:700;font-family:inherit;border:none;cursor:pointer;transition:background .15s,transform .1s,box-shadow .15s;text-decoration:none;box-shadow:0 4px 16px rgba(94,129,172,.45)}
+    .btn-hero:hover{background:var(--primary-d);box-shadow:0 6px 22px rgba(94,129,172,.55);transform:translateY(-2px)}
+    .btn-hero-ghost{display:inline-flex;align-items:center;gap:10px;padding:13px 30px;color:var(--text);background:transparent;border:1.5px solid var(--border);border-radius:var(--radius-m);font-size:1rem;font-weight:500;font-family:inherit;cursor:pointer;transition:border-color .15s,background .15s,transform .1s}
+    .btn-hero-ghost:hover{border-color:var(--faint);background:var(--surface);transform:translateY(-2px)}
+
+    /* ── PREVIEW ──────────────────────────────────────── */
+    .preview-section{max-width:880px;margin:0 auto;padding:0 2rem 5.5rem}
+    .browser-mock{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-l);box-shadow:var(--shadow-l);overflow:hidden}
+    .browser-bar{padding:12px 16px;background:#f0ede9;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px}
+    .dots{display:flex;gap:6px}
+    .dots span{width:11px;height:11px;border-radius:50%;display:block}
+    .dot-r{background:#ff5f57}.dot-y{background:#febc2e}.dot-g{background:#28c840}
+    .url-bar{flex:1;background:var(--surface);border:1px solid var(--border);border-radius:5px;padding:4px 12px;font-size:.7rem;color:var(--muted);font-family:'JetBrains Mono',monospace;max-width:290px;margin:0 auto;text-align:center}
+    .browser-body{padding:1.5rem;display:grid;grid-template-columns:1.1fr 1fr;gap:1.25rem;align-items:start}
+    /* fake video */
+    .fake-video{aspect-ratio:16/9;background:linear-gradient(145deg,#1a1a2e,#0f3460);border-radius:10px;display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden}
+    .fake-video::after{content:'';position:absolute;inset:0;background:radial-gradient(circle at 50% 50%,rgba(94,129,172,.15) 0%,transparent 70%)}
+    .fake-play{width:46px;height:46px;background:rgba(255,255,255,.18);backdrop-filter:blur(4px);border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-size:1.1rem;z-index:1}
+    /* fake controls */
+    .fake-ctrl{display:flex;flex-direction:column;gap:.75rem}
+    .fake-lbl{font-size:.65rem;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:var(--faint)}
+    .fake-slider-wrap{position:relative;height:6px;background:#e4e2de;border-radius:9999px;margin:10px 0 4px}
+    .fake-fill{position:absolute;left:12%;right:20%;height:100%;background:var(--primary);border-radius:9999px}
+    .fake-t{position:absolute;width:16px;height:16px;border-radius:50%;background:#fff;border:2.5px solid var(--primary);top:50%;box-shadow:0 1px 4px rgba(0,0,0,.2)}
+    .fake-t-s{left:12%;transform:translate(-50%,-50%)}
+    .fake-t-e{right:20%;transform:translate(50%,-50%)}
+    .fake-labels{display:flex;justify-content:space-between;font-size:.65rem;color:var(--faint);font-family:'JetBrains Mono',monospace}
+    .fake-row{display:flex;gap:8px}
+    .fake-box{flex:1;background:var(--bg);border:1.5px solid var(--border);border-radius:6px;padding:7px 10px}
+    .fake-box .fake-lbl{margin-bottom:3px}
+    .fake-val{font-family:'JetBrains Mono',monospace;font-size:.8rem;color:var(--text)}
+    .fake-dur{display:flex;justify-content:space-between;align-items:center;padding:8px 12px;background:var(--primary-xl);border:1px solid var(--primary-bg);border-radius:8px}
+    .fake-dur-v{font-family:'JetBrains Mono',monospace;font-size:.9rem;font-weight:600;color:var(--primary)}
+    .fake-create{width:100%;padding:11px;background:var(--primary);color:#fff;border:none;border-radius:8px;font-size:.9rem;font-weight:600;font-family:inherit;cursor:default;display:flex;align-items:center;justify-content:center;gap:8px}
+
+    /* ── SECTION SHELL ────────────────────────────────── */
+    .section{padding:5rem 2rem}
+    .section-inner{max-width:1100px;margin:0 auto}
+    .section-alt{background:var(--surface)}
+    .section-tag{display:inline-flex;align-items:center;gap:6px;padding:5px 13px;background:var(--primary-bg);color:var(--primary);border-radius:9999px;font-size:.75rem;font-weight:600;letter-spacing:.04em;text-transform:uppercase;margin-bottom:1rem}
+    .section-h{font-size:clamp(1.75rem,3.5vw,2.5rem);font-weight:800;letter-spacing:-.04em;line-height:1.15;margin-bottom:.875rem}
+    .section-sub{font-size:1rem;color:var(--muted);max-width:520px;line-height:1.7}
+    .section-center{text-align:center}
+    .section-center .section-sub{margin:0 auto}
+
+    /* ── HOW IT WORKS ─────────────────────────────────── */
+    .steps{display:grid;grid-template-columns:repeat(3,1fr);gap:2rem;margin-top:3.5rem;position:relative}
+    .steps::before{content:'';position:absolute;top:28px;left:calc(16.6% + 1.5rem);right:calc(16.6% + 1.5rem);height:1.5px;background:linear-gradient(90deg,var(--primary) 0%,var(--primary) 50%,var(--border) 50%);background-size:200% 100%;animation:progress-line 2s ease-out forwards;animation-play-state:paused}
+    .steps.revealed::before{animation-play-state:running}
+
+    @keyframes progress-line{from{background-position:100% 0}to{background-position:0 0}}
+
+    .step{text-align:center;position:relative}
+    .step-num{width:56px;height:56px;border-radius:50%;background:var(--primary-xl);border:2px solid var(--primary-bg);display:inline-flex;align-items:center;justify-content:center;margin:0 auto 1.25rem;position:relative;z-index:1;transition:background .3s,border-color .3s,box-shadow .3s}
+    .step-num i{font-size:1.25rem;color:var(--primary)}
+    .step:hover .step-num{background:var(--primary);border-color:var(--primary);box-shadow:0 4px 16px rgba(94,129,172,.4)}
+    .step:hover .step-num i{color:#fff}
+    .step h3{font-size:1rem;font-weight:700;letter-spacing:-.02em;margin-bottom:.5rem}
+    .step p{font-size:.875rem;color:var(--muted);line-height:1.65}
+    .step-badge{display:inline-block;padding:2px 8px;background:var(--primary-bg);color:var(--primary);border-radius:4px;font-size:.65rem;font-weight:700;font-family:'JetBrains Mono',monospace;margin-bottom:.5rem}
+
+    /* ── FEATURES ─────────────────────────────────────── */
+    .features-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1.25rem;margin-top:3rem}
+    .feat-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-m);padding:1.5rem;transition:box-shadow .2s,border-color .2s,transform .2s}
+    .feat-card:hover{box-shadow:var(--shadow-m);border-color:var(--primary-bg);transform:translateY(-2px)}
+    .feat-icon{width:42px;height:42px;border-radius:10px;background:var(--primary-xl);display:flex;align-items:center;justify-content:center;margin-bottom:1rem;font-size:.95rem;color:var(--primary)}
+    .feat-card h3{font-size:.95rem;font-weight:700;letter-spacing:-.02em;margin-bottom:.375rem}
+    .feat-card p{font-size:.83rem;color:var(--muted);line-height:1.6}
+
+    /* ── CLI ──────────────────────────────────────────── */
+    .cli-section{max-width:760px;margin:0 auto}
+    .cli-window{background:#1e2030;border-radius:var(--radius-m);overflow:hidden;box-shadow:var(--shadow-l)}
+    .cli-bar{padding:12px 16px;background:#161724;display:flex;align-items:center;gap:10px}
+    .cli-bar .dots span{} /* reuse existing */
+    .cli-title{font-size:.72rem;color:#6b7280;font-family:'JetBrains Mono',monospace;margin:0 auto}
+    .cli-body{padding:1.5rem 1.75rem;font-family:'JetBrains Mono',monospace;font-size:.82rem;line-height:1.75}
+    .cli-line{display:flex;gap:.5rem;flex-wrap:wrap}
+    .c-prompt{color:#5e81ac;user-select:none}
+    .c-cmd{color:#81a1c1}
+    .c-arg{color:#a3be8c}
+    .c-flag{color:#ebcb8b}
+    .c-val{color:#88c0d0}
+    .c-comment{color:#4c566a;font-style:italic}
+    .c-output{color:#d8dee9;opacity:.7;padding-left:1rem}
+    .c-success{color:#a3be8c}
+    .cli-spacer{height:.5rem}
+
+    /* ── FAQ ──────────────────────────────────────────── */
+    .faq-list{margin-top:2.5rem;display:flex;flex-direction:column;gap:0}
+    .faq-item{border-bottom:1px solid var(--border)}
+    .faq-item:first-child{border-top:1px solid var(--border)}
+    .faq-item summary{list-style:none;cursor:pointer;padding:1.125rem 0;display:flex;justify-content:space-between;align-items:center;gap:1rem;font-weight:600;font-size:.95rem;letter-spacing:-.01em;transition:color .15s}
+    .faq-item summary::-webkit-details-marker{display:none}
+    .faq-item summary:hover{color:var(--primary)}
+    .faq-icon{width:22px;height:22px;border-radius:50%;border:1.5px solid var(--border);display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:transform .25s,background .2s,border-color .2s;font-size:.65rem;color:var(--muted)}
+    .faq-item[open] .faq-icon{transform:rotate(45deg);background:var(--primary);border-color:var(--primary);color:#fff}
+    .faq-body{padding:0 0 1.25rem;max-width:680px}
+    .faq-body p{font-size:.9rem;color:var(--muted);line-height:1.75}
+    .faq-body code{background:var(--bg);padding:2px 6px;border-radius:4px;font-family:'JetBrains Mono',monospace;font-size:.85em;color:var(--primary)}
+
+    /* ── FOOTER ───────────────────────────────────────── */
+    footer{background:var(--text);color:rgba(255,255,255,.55)}
+    .footer-inner{max-width:1100px;margin:0 auto;padding:4rem 2rem 2rem}
+    .footer-top{display:grid;grid-template-columns:1.5fr repeat(3,1fr);gap:3rem;margin-bottom:3rem}
+    .footer-brand{display:flex;flex-direction:column;gap:.875rem}
+    .footer-brand-row{display:flex;align-items:center;gap:10px}
+    .footer-brand-name{font-size:1.05rem;font-weight:700;letter-spacing:-.03em;color:rgba(255,255,255,.9)}
+    .footer-tagline{font-size:.82rem;line-height:1.65;max-width:240px}
+    .footer-badges{display:flex;gap:6px;flex-wrap:wrap}
+    .footer-badge{display:inline-flex;align-items:center;gap:5px;padding:4px 9px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.1);border-radius:9999px;font-size:.68rem;font-weight:500}
+    .footer-badge i{font-size:.58rem;color:rgba(255,255,255,.5)}
+    .footer-col h4{font-size:.75rem;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:rgba(255,255,255,.4);margin-bottom:1rem}
+    .footer-col ul{list-style:none;display:flex;flex-direction:column;gap:.5rem}
+    .footer-col a{font-size:.85rem;color:rgba(255,255,255,.5);transition:color .15s}
+    .footer-col a:hover{color:rgba(255,255,255,.9)}
+    .footer-bottom{border-top:1px solid rgba(255,255,255,.08);padding-top:1.5rem;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:.75rem;font-size:.78rem}
+    .footer-legal{max-width:500px;line-height:1.6}
+
+    /* ── REVEAL ANIMATIONS ────────────────────────────── */
+    .reveal{opacity:0;transform:translateY(24px);transition:opacity .6s ease,transform .6s ease}
+    .reveal.revealed{opacity:1;transform:translateY(0)}
+    .reveal-d1{transition-delay:.08s}
+    .reveal-d2{transition-delay:.16s}
+    .reveal-d3{transition-delay:.24s}
+    .reveal-d4{transition-delay:.32s}
+    .reveal-d5{transition-delay:.40s}
+    .reveal-d6{transition-delay:.48s}
+
+    /* ── RESPONSIVE ───────────────────────────────────── */
+    @media(max-width:768px){
+      .browser-body{grid-template-columns:1fr}
+      .fake-video{display:none}
+      .steps{grid-template-columns:1fr}
+      .steps::before{display:none}
+      .features-grid{grid-template-columns:1fr 1fr}
+      .footer-top{grid-template-columns:1fr 1fr;gap:2rem}
+      .footer-bottom{flex-direction:column;align-items:flex-start}
+    }
+    @media(max-width:480px){
+      .hero{padding:4rem 1.25rem 2.5rem}
+      .section{padding:3.5rem 1.25rem}
+      .features-grid{grid-template-columns:1fr}
+      .footer-top{grid-template-columns:1fr}
+    }
+  </style>
+</head>
+<body>
+
+<!-- ── NAV ──────────────────────────────────────────────────────────── -->
+<nav class="nav">
+  <div class="nav-inner">
+    <a href="/" class="nav-brand">
+      <svg class="logo-svg-sm" width="30" height="30" viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <linearGradient id="ng" x1="0" y1="0" x2="80" y2="80" gradientUnits="userSpaceOnUse">
+            <stop offset="0%" stop-color="#7ba8cb"/><stop offset="100%" stop-color="#4a709a"/>
+          </linearGradient>
+        </defs>
+        <rect width="80" height="80" rx="18" fill="url(#ng)"/>
+        <g id="upper-arm">
+          <circle cx="18" cy="22" r="8.5" fill="none" stroke="white" stroke-width="3.5"/>
+          <line x1="24" y1="27" x2="40" y2="40" stroke="white" stroke-width="3.5" stroke-linecap="round"/>
+          <line x1="40" y1="40" x2="65" y2="19" stroke="white" stroke-width="3.5" stroke-linecap="round"/>
+        </g>
+        <g id="lower-arm">
+          <circle cx="18" cy="58" r="8.5" fill="none" stroke="white" stroke-width="3.5"/>
+          <line x1="24" y1="53" x2="40" y2="40" stroke="white" stroke-width="3.5" stroke-linecap="round"/>
+          <line x1="40" y1="40" x2="65" y2="61" stroke="white" stroke-width="3.5" stroke-linecap="round"/>
+        </g>
+        <circle cx="40" cy="40" r="4.5" fill="white"/>
+      </svg>
+      ytclip
+    </a>
+    <div class="nav-actions">
+      <a href="https://github.com/ZeeshanJan/ytclip" target="_blank" rel="noopener" class="btn-ghost-sm">
+        <i class="fa-brands fa-github"></i> GitHub
+      </a>
+      <a href="https://YOUR_INSTANCE_URL/app" class="btn-pill">
+        Open App <i class="fa-solid fa-arrow-right"></i>
+      </a>
+    </div>
+  </div>
+</nav>
+
+<!-- ── HERO ──────────────────────────────────────────────────────────── -->
+<section class="hero">
+  <div class="hero-logo">
+    <svg class="logo-svg" viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <linearGradient id="hg" x1="0" y1="0" x2="80" y2="80" gradientUnits="userSpaceOnUse">
+          <stop offset="0%" stop-color="#7ba8cb"/><stop offset="100%" stop-color="#4a709a"/>
+        </linearGradient>
+      </defs>
+      <rect width="80" height="80" rx="18" fill="url(#hg)"/>
+      <g id="upper-arm">
+        <circle cx="18" cy="22" r="8.5" fill="none" stroke="white" stroke-width="3.5"/>
+        <line x1="24" y1="27" x2="40" y2="40" stroke="white" stroke-width="3.5" stroke-linecap="round"/>
+        <line x1="40" y1="40" x2="65" y2="19" stroke="white" stroke-width="3.5" stroke-linecap="round"/>
+      </g>
+      <g id="lower-arm">
+        <circle cx="18" cy="58" r="8.5" fill="none" stroke="white" stroke-width="3.5"/>
+        <line x1="24" y1="53" x2="40" y2="40" stroke="white" stroke-width="3.5" stroke-linecap="round"/>
+        <line x1="40" y1="40" x2="65" y2="61" stroke="white" stroke-width="3.5" stroke-linecap="round"/>
+      </g>
+      <circle cx="40" cy="40" r="4.5" fill="white"/>
+    </svg>
+  </div>
+
+  <h1>The sharpest way to<br><span class="cut">clip YouTube.</span></h1>
+
+  <p class="hero-sub">Self-hosted. Source quality. No cloud, no subscription. Runs entirely on your own hardware.</p>
+
+  <div class="hero-tags">
+    <span class="tag"><i class="fa-solid fa-lock-open"></i> Open Source</span>
+    <span class="tag"><i class="fa-solid fa-scale-balanced"></i> MIT License</span>
+    <span class="tag"><i class="fa-brands fa-python"></i> Python 3.12</span>
+    <span class="tag"><i class="fa-brands fa-docker"></i> Docker Ready</span>
+    <span class="tag"><i class="fa-solid fa-hard-drive"></i> Self-hosted</span>
+  </div>
+
+  <div class="hero-cta">
+    <a href="https://YOUR_INSTANCE_URL/app" class="btn-hero">
+      <i class="fa-solid fa-scissors"></i> Start Clipping
+    </a>
+    <a href="https://github.com/ZeeshanJan/ytclip" target="_blank" rel="noopener" class="btn-hero-ghost">
+      <i class="fa-brands fa-github"></i> View on GitHub
+    </a>
+  </div>
+</section>
+
+<!-- ── APP PREVIEW ────────────────────────────────────────────────────── -->
+<div class="preview-section reveal">
+  <div class="browser-mock">
+    <div class="browser-bar">
+      <div class="dots">
+        <span class="dot-r"></span><span class="dot-y"></span><span class="dot-g"></span>
+      </div>
+      <div class="url-bar">localhost:8000/app</div>
+    </div>
+    <div class="browser-body">
+      <div class="fake-video">
+        <div class="fake-play"><i class="fa-solid fa-play"></i></div>
+      </div>
+      <div class="fake-ctrl">
+        <div>
+          <div class="fake-lbl">Timeline</div>
+          <div class="fake-slider-wrap">
+            <div class="fake-fill"></div>
+            <div class="fake-t fake-t-s"></div>
+            <div class="fake-t fake-t-e"></div>
+          </div>
+          <div class="fake-labels"><span>0:00</span><span>8:32</span></div>
+        </div>
+        <div class="fake-row">
+          <div class="fake-box">
+            <div class="fake-lbl">Start</div>
+            <div class="fake-val">2:14</div>
+          </div>
+          <div class="fake-box">
+            <div class="fake-lbl">End</div>
+            <div class="fake-val">3:47</div>
+          </div>
+        </div>
+        <div class="fake-dur">
+          <span class="fake-lbl" style="text-transform:none;letter-spacing:0;font-size:.75rem;"><i class="fa-regular fa-clock" style="margin-right:4px;"></i>Clip duration</span>
+          <span class="fake-dur-v">1:33</span>
+        </div>
+        <div class="fake-create">
+          <i class="fa-solid fa-scissors"></i> Create Clip
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── WHAT IT IS ─────────────────────────────────────────────────────── -->
+<section class="section section-alt">
+  <div class="section-inner section-center">
+    <div class="reveal">
+      <div class="section-tag"><i class="fa-solid fa-info-circle"></i> About</div>
+      <h2 class="section-h">One tool. Your clips. Your machine.</h2>
+      <p class="section-sub">ytclip is a self-hosted web app that lets you cut any moment from any YouTube video — at the highest available quality — without touching a cloud server. Paste a URL, drag the handles, hit Create. Done.</p>
+    </div>
+
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;margin-top:3rem;text-align:left">
+      <div class="reveal reveal-d1" style="padding:1.5rem;background:var(--bg);border-radius:var(--radius-m);border:1px solid var(--border-light)">
+        <div style="font-size:1.6rem;margin-bottom:.625rem">🎞️</div>
+        <div style="font-weight:700;font-size:.9rem;margin-bottom:.25rem">Source quality</div>
+        <div style="font-size:.82rem;color:var(--muted);line-height:1.6">Downloads the best available video and audio streams and merges them. Zero unnecessary re-encoding.</div>
+      </div>
+      <div class="reveal reveal-d2" style="padding:1.5rem;background:var(--bg);border-radius:var(--radius-m);border:1px solid var(--border-light)">
+        <div style="font-size:1.6rem;margin-bottom:.625rem">⚡</div>
+        <div style="font-weight:700;font-size:.9rem;margin-bottom:.25rem">Smart bandwidth</div>
+        <div style="font-size:.82rem;color:var(--muted);line-height:1.6">Fetches only the DASH segments covering your clip range — not the whole video. Falls back gracefully.</div>
+      </div>
+      <div class="reveal reveal-d3" style="padding:1.5rem;background:var(--bg);border-radius:var(--radius-m);border:1px solid var(--border-light)">
+        <div style="font-size:1.6rem;margin-bottom:.625rem">🔒</div>
+        <div style="font-weight:700;font-size:.9rem;margin-bottom:.25rem">Fully private</div>
+        <div style="font-size:.82rem;color:var(--muted);line-height:1.6">Everything runs on your hardware. Clips go straight to your machine. Nothing passes through a third-party server.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── HOW IT WORKS ────────────────────────────────────────────────────── -->
+<section class="section">
+  <div class="section-inner">
+    <div class="section-center reveal">
+      <div class="section-tag"><i class="fa-solid fa-list-ol"></i> How it works</div>
+      <h2 class="section-h">Three steps to your clip</h2>
+    </div>
+
+    <div class="steps reveal" id="steps-container">
+      <div class="step reveal-d1">
+        <div class="step-badge">01</div>
+        <div class="step-num"><i class="fa-brands fa-youtube"></i></div>
+        <h3>Paste a URL</h3>
+        <p>Drop any YouTube link into the input. ytclip fetches the video metadata and loads the embedded player instantly.</p>
+      </div>
+      <div class="step reveal-d2">
+        <div class="step-badge">02</div>
+        <div class="step-num"><i class="fa-solid fa-sliders"></i></div>
+        <h3>Set your in/out points</h3>
+        <p>Drag the timeline handles to your exact start and end. Type timestamps directly or use the ⏱ button to capture the current playback position.</p>
+      </div>
+      <div class="step reveal-d3">
+        <div class="step-badge">03</div>
+        <div class="step-num"><i class="fa-solid fa-download"></i></div>
+        <h3>Download your clip</h3>
+        <p>Hit Create Clip. Watch real-time ffmpeg progress stream in. When it's done, click Download — the file goes straight to your device.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── FEATURES ───────────────────────────────────────────────────────── -->
+<section class="section section-alt">
+  <div class="section-inner">
+    <div class="section-center reveal">
+      <div class="section-tag"><i class="fa-solid fa-sparkles"></i> Features</div>
+      <h2 class="section-h">Everything you need. Nothing you don't.</h2>
+    </div>
+
+    <div class="features-grid">
+      <div class="feat-card reveal reveal-d1">
+        <div class="feat-icon"><i class="fa-solid fa-star"></i></div>
+        <h3>Highest quality by default</h3>
+        <p>Merges the best available video and audio streams. Set a quality cap in config if you prefer. MKV mode stream-copies with zero re-encoding.</p>
+      </div>
+      <div class="feat-card reveal reveal-d2">
+        <div class="feat-icon"><i class="fa-solid fa-bolt"></i></div>
+        <h3>DASH segment fetching</h3>
+        <p>Downloads only the video segments that cover your clip window — not the full file. Dramatically reduces bandwidth for large videos.</p>
+      </div>
+      <div class="feat-card reveal reveal-d3">
+        <div class="feat-icon"><i class="fa-solid fa-film"></i></div>
+        <h3>Multiple output formats</h3>
+        <p>MP4 (H.264), MKV (stream-copy, no re-encode), MP3, or AAC. Choose per clip. Set a default in config.</p>
+      </div>
+      <div class="feat-card reveal reveal-d4">
+        <div class="feat-icon"><i class="fa-solid fa-signal"></i></div>
+        <h3>Live progress stream</h3>
+        <p>Real-time ffmpeg output piped to your browser via Server-Sent Events. No polling. No page refresh.</p>
+      </div>
+      <div class="feat-card reveal reveal-d5">
+        <div class="feat-icon"><i class="fa-solid fa-layer-group"></i></div>
+        <h3>Concurrent job queue</h3>
+        <p>Run multiple clip jobs simultaneously. Configurable concurrency. Jobs persist across server restarts in SQLite.</p>
+      </div>
+      <div class="feat-card reveal reveal-d6">
+        <div class="feat-icon"><i class="fa-solid fa-terminal"></i></div>
+        <h3>Full CLI included</h3>
+        <p>Script it. Automate it. The <code style="font-family:'JetBrains Mono',monospace;font-size:.85em;background:var(--bg);padding:1px 5px;border-radius:3px">ytclip clip</code> command runs standalone — no server needed.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── CLI SHOWCASE ────────────────────────────────────────────────────── -->
+<section class="section">
+  <div class="section-inner">
+    <div class="reveal" style="max-width:760px;margin:0 auto">
+      <div class="section-tag"><i class="fa-solid fa-terminal"></i> CLI</div>
+      <h2 class="section-h">Works without a browser too</h2>
+      <p class="section-sub" style="margin-bottom:2rem">The <code style="font-family:'JetBrains Mono',monospace;font-size:.9em;background:var(--bg);padding:2px 7px;border-radius:4px;color:var(--primary)">ytclip</code> command runs yt-dlp and ffmpeg locally — no server, no UI required. Delegate to a running instance with <code style="font-family:'JetBrains Mono',monospace;font-size:.9em;background:var(--bg);padding:2px 7px;border-radius:4px;color:var(--primary)">--server-url</code>.</p>
+
+      <div class="cli-window">
+        <div class="cli-bar">
+          <div class="dots"><span class="dot-r"></span><span class="dot-y"></span><span class="dot-g"></span></div>
+          <span class="cli-title">Terminal</span>
+        </div>
+        <div class="cli-body">
+          <div class="c-comment"># clip 1:30 to 4:15, highest quality</div>
+          <div class="cli-line">
+            <span class="c-prompt">$</span>
+            <span class="c-cmd">ytclip clip</span>
+            <span class="c-arg">"https://youtube.com/watch?v=…"</span>
+            <span class="c-flag">--start</span> <span class="c-val">1:30</span>
+            <span class="c-flag">--end</span> <span class="c-val">4:15</span>
+          </div>
+          <div class="cli-spacer"></div>
+          <div class="c-comment"># audio-only MP3</div>
+          <div class="cli-line">
+            <span class="c-prompt">$</span>
+            <span class="c-cmd">ytclip clip</span>
+            <span class="c-arg">"…"</span>
+            <span class="c-flag">--start</span> <span class="c-val">0:45</span>
+            <span class="c-flag">--end</span> <span class="c-val">3:00</span>
+            <span class="c-flag">--format</span> <span class="c-val">mp3</span>
+          </div>
+          <div class="cli-spacer"></div>
+          <div class="c-comment"># stream-copy into MKV (zero re-encoding)</div>
+          <div class="cli-line">
+            <span class="c-prompt">$</span>
+            <span class="c-cmd">ytclip clip</span>
+            <span class="c-arg">"…"</span>
+            <span class="c-flag">--start</span> <span class="c-val">0:00</span>
+            <span class="c-flag">--end</span> <span class="c-val">10:00</span>
+            <span class="c-flag">--format</span> <span class="c-val">mkv</span>
+          </div>
+          <div class="cli-spacer"></div>
+          <div class="c-output">⠿ Downloading segments…    ████████████░░░  68%</div>
+          <div class="c-output">⠿ Merging streams…         ████████████████ 100%</div>
+          <div class="c-success">✓ Saved: ~/yt-clips/Video_Title_0000-1000_a3f2.mp4</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── FAQ ────────────────────────────────────────────────────────────── -->
+<section class="section section-alt">
+  <div class="section-inner" style="max-width:780px;margin:0 auto">
+    <div class="section-center reveal">
+      <div class="section-tag"><i class="fa-solid fa-circle-question"></i> FAQ</div>
+      <h2 class="section-h">Common questions</h2>
+    </div>
+
+    <div class="faq-list reveal">
+
+      <details class="faq-item">
+        <summary>
+          Is it legal to use ytclip?
+          <span class="faq-icon"><i class="fa-solid fa-plus"></i></span>
+        </summary>
+        <div class="faq-body">
+          <p>ytclip is a personal-use tool. Downloading content from YouTube may violate their Terms of Service and/or copyright law depending on what you download and where you are. <strong>You are solely responsible for the content you clip.</strong> ytclip has substantial legitimate uses — your own videos, public domain content, Creative Commons licensed material, fair-use clips. The tool itself is legally equivalent to yt-dlp, which has existed as open-source software without successful legal challenge.</p>
+        </div>
+      </details>
+
+      <details class="faq-item">
+        <summary>
+          Will it work for all YouTube videos?
+          <span class="faq-icon"><i class="fa-solid fa-plus"></i></span>
+        </summary>
+        <div class="faq-body">
+          <p>ytclip can create clips from most YouTube videos using yt-dlp. However, the <strong>embedded player preview</strong> may be unavailable for videos where the uploader has disabled embedding — this is a YouTube restriction and cannot be bypassed. When that happens, ytclip shows a "Preview unavailable" card but the timeline and clip creation still work normally using server-fetched duration data.</p>
+        </div>
+      </details>
+
+      <details class="faq-item">
+        <summary>
+          Do I need to install ffmpeg?
+          <span class="faq-icon"><i class="fa-solid fa-plus"></i></span>
+        </summary>
+        <div class="faq-body">
+          <p>No. ytclip bundles a static ffmpeg build via <code>static-ffmpeg</code> as a fallback. If you have a system ffmpeg installed, it will be preferred. The Docker image includes a full ffmpeg installation. For bare Python installs, everything works out of the box without any manual ffmpeg setup.</p>
+        </div>
+      </details>
+
+      <details class="faq-item">
+        <summary>
+          Can I expose ytclip to the internet?
+          <span class="faq-icon"><i class="fa-solid fa-plus"></i></span>
+        </summary>
+        <div class="faq-body">
+          <p>Yes, but enable password auth first in your <code>config.toml</code>:<br><code>enabled = true</code> and <code>password = "your-strong-password"</code> under <code>[auth]</code>. Running behind a reverse proxy (Caddy, nginx) with HTTPS is strongly recommended. Note: SSE progress streaming requires <code>proxy_buffering off</code> in nginx.</p>
+        </div>
+      </details>
+
+      <details class="faq-item">
+        <summary>
+          Is there a clip duration limit?
+          <span class="faq-icon"><i class="fa-solid fa-plus"></i></span>
+        </summary>
+        <div class="faq-body">
+          <p>No hard limit by default. Set <code>max_clip_duration</code> in your config to impose one (value in seconds, <code>0</code> = no limit). Very long clips may take a while depending on your hardware and network speed.</p>
+        </div>
+      </details>
+
+      <details class="faq-item">
+        <summary>
+          What about age-restricted videos?
+          <span class="faq-icon"><i class="fa-solid fa-plus"></i></span>
+        </summary>
+        <div class="faq-body">
+          <p>Export your YouTube cookies from your browser (using an extension like "Get cookies.txt LOCALLY") and point ytclip to the file via <code>cookies_file</code> in your config. This lets yt-dlp authenticate as your account and access restricted content you have permission to view.</p>
+        </div>
+      </details>
+
+    </div>
+  </div>
+</section>
+
+<!-- ── SUPPORT ────────────────────────────────────────────────────────── -->
+<section class="section">
+  <div class="section-inner" style="max-width:680px;margin:0 auto;text-align:center">
+    <div class="reveal">
+      <div class="section-tag"><i class="fa-solid fa-heart"></i> Support</div>
+      <h2 class="section-h">If ytclip saves you time</h2>
+      <p class="section-sub" style="margin:0 auto 2.5rem">Support is completely optional — ytclip will always be free and open source. But if you'd like to say thanks, here are a few ways.</p>
+    </div>
+
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;margin-bottom:2.5rem">
+      <div class="reveal reveal-d1" style="padding:1.375rem 1rem;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-m);display:flex;flex-direction:column;align-items:center;gap:.625rem">
+        <div style="font-size:1.5rem">⭐</div>
+        <div style="font-weight:700;font-size:.875rem">Star on GitHub</div>
+        <div style="font-size:.78rem;color:var(--muted);line-height:1.5">Helps others discover the project</div>
+        <a href="https://github.com/ZeeshanJan/ytclip" target="_blank" rel="noopener"
+           style="margin-top:auto;font-size:.78rem;color:var(--primary);font-weight:600">
+          Star ↗
+        </a>
+      </div>
+      <div class="reveal reveal-d2" style="padding:1.375rem 1rem;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-m);display:flex;flex-direction:column;align-items:center;gap:.625rem">
+        <div style="font-size:1.5rem">🐛</div>
+        <div style="font-weight:700;font-size:.875rem">Report &amp; suggest</div>
+        <div style="font-size:.78rem;color:var(--muted);line-height:1.5">File bugs or request features on GitHub</div>
+        <a href="https://github.com/ZeeshanJan/ytclip/issues" target="_blank" rel="noopener"
+           style="margin-top:auto;font-size:.78rem;color:var(--primary);font-weight:600">
+          Open issue ↗
+        </a>
+      </div>
+      <div class="reveal reveal-d3" style="padding:1.375rem 1rem;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-m);display:flex;flex-direction:column;align-items:center;gap:.625rem">
+        <div style="font-size:1.5rem">📣</div>
+        <div style="font-weight:700;font-size:.875rem">Share it</div>
+        <div style="font-size:.78rem;color:var(--muted);line-height:1.5">Tell others who might find it useful</div>
+      </div>
+    </div>
+
+    <div class="reveal reveal-d4">
+      <a href="https://buymeacoffee.com/zeeshan" target="_blank" rel="noopener"
+         style="display:inline-flex;align-items:center;gap:10px;padding:14px 28px;background:#FFDD00;color:#1c1917;border-radius:var(--radius-m);font-size:.95rem;font-weight:700;font-family:inherit;text-decoration:none;transition:transform .15s,box-shadow .15s;box-shadow:0 4px 14px rgba(255,221,0,.45);"
+         onmouseover="this.style.transform='translateY(-2px)';this.style.boxShadow='0 6px 20px rgba(255,221,0,.55)'"
+         onmouseout="this.style.transform='';this.style.boxShadow='0 4px 14px rgba(255,221,0,.45)'">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M20.216 6.415l-.132-.666c-.119-.598-.388-1.163-1.001-1.379-.197-.069-.42-.098-.57-.241-.152-.143-.196-.366-.231-.572-.065-.378-.125-.756-.192-1.133-.057-.325-.102-.69-.25-.987-.195-.4-.597-.634-.996-.788a5.723 5.723 0 00-.626-.194c-1-.263-2.05-.36-3.077-.416a25.834 25.834 0 00-3.7.062c-.915.083-1.88.184-2.75.5-.318.116-.646.256-.888.501-.297.302-.393.77-.177 1.146.154.267.415.456.692.58.36.162.737.284 1.123.366 1.075.238 2.189.331 3.287.37 1.218.05 2.437.01 3.65-.118.299-.033.598-.073.896-.119.352-.054.578-.513.474-.834-.124-.383-.457-.531-.834-.473-.466.074-.96.108-1.382.146-1.177.08-2.358.082-3.536.006a22.228 22.228 0 01-1.157-.107c-.086-.01-.18-.025-.258-.036-.243-.036-.484-.08-.724-.13-.111-.027-.111-.185 0-.212h.005c.277-.06.557-.108.838-.147h.002c.131-.009.263-.032.394-.048a25.076 25.076 0 013.426-.12c.674.019 1.347.067 2.017.144l.228.031c.267.04.533.088.798.145.392.085.895.113 1.07.542.055.137.08.288.111.431l.319 1.484a.237.237 0 01-.199.284h-.003c-.037.006-.075.01-.112.015a36.704 36.704 0 01-4.743.295 37.059 37.059 0 01-4.699-.304c-.14-.017-.293-.042-.417-.06-.326-.048-.649-.108-.973-.161-.393-.065-.768.16-.884.53-.102.334.024.73.385.79.334.057.668.108 1.003.148.165.019.33.037.495.054a37.465 37.465 0 003.6.152c1.502.01 3.005-.05 4.5-.194.335-.032.671-.071 1.003-.117.278-.038.526-.208.595-.487.068-.28-.034-.536-.249-.696z" fill="#1c1917"/>
+          <path d="M3.5 11.5c0-1.5 1.5-3 3.5-3l9 .5c1.5 0 3 1.5 3 3l-1 5.5c-.5 2-2 3.5-4.5 3.5h-4c-2.5 0-4-1.5-4.5-3.5L3.5 11.5z" fill="#1c1917"/>
+        </svg>
+        Buy me a coffee
+      </a>
+    </div>
+  </div>
+</section>
+
+<!-- ── FOOTER ─────────────────────────────────────────────────────────── -->
+<footer>
+  <div class="footer-inner">
+    <div class="footer-top">
+      <div class="footer-brand">
+        <div class="footer-brand-row">
+          <svg width="28" height="28" viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+              <linearGradient id="fg" x1="0" y1="0" x2="80" y2="80" gradientUnits="userSpaceOnUse">
+                <stop offset="0%" stop-color="#7ba8cb"/><stop offset="100%" stop-color="#4a709a"/>
+              </linearGradient>
+            </defs>
+            <rect width="80" height="80" rx="18" fill="url(#fg)"/>
+            <g>
+              <circle cx="18" cy="22" r="8.5" fill="none" stroke="white" stroke-width="3.5"/>
+              <line x1="24" y1="27" x2="40" y2="40" stroke="white" stroke-width="3.5" stroke-linecap="round"/>
+              <line x1="40" y1="40" x2="65" y2="19" stroke="white" stroke-width="3.5" stroke-linecap="round"/>
+            </g>
+            <g>
+              <circle cx="18" cy="58" r="8.5" fill="none" stroke="white" stroke-width="3.5"/>
+              <line x1="24" y1="53" x2="40" y2="40" stroke="white" stroke-width="3.5" stroke-linecap="round"/>
+              <line x1="40" y1="40" x2="65" y2="61" stroke="white" stroke-width="3.5" stroke-linecap="round"/>
+            </g>
+            <circle cx="40" cy="40" r="4.5" fill="white"/>
+          </svg>
+          <span class="footer-brand-name">ytclip</span>
+        </div>
+        <p class="footer-tagline">Self-hosted YouTube clip creator. Source quality. No cloud. No subscription.</p>
+        <div class="footer-badges">
+          <span class="footer-badge"><i class="fa-solid fa-code-branch"></i> MIT License</span>
+          <span class="footer-badge"><i class="fa-brands fa-python"></i> Python 3.12</span>
+          <span class="footer-badge"><i class="fa-brands fa-docker"></i> Docker</span>
+        </div>
+      </div>
+
+      <div class="footer-col">
+        <h4>App</h4>
+        <ul>
+          <li><a href="https://YOUR_INSTANCE_URL/app"><i class="fa-solid fa-scissors fa-xs" style="margin-right:6px;opacity:.4"></i>Clip Creator</a></li>
+          <li><a href="https://YOUR_INSTANCE_URL/library"><i class="fa-solid fa-film fa-xs" style="margin-right:6px;opacity:.4"></i>Library</a></li>
+        </ul>
+      </div>
+
+      <div class="footer-col">
+        <h4>Project</h4>
+        <ul>
+          <li><a href="https://github.com/ZeeshanJan/ytclip" target="_blank" rel="noopener"><i class="fa-brands fa-github fa-xs" style="margin-right:6px;opacity:.4"></i>GitHub</a></li>
+          <li><a href="https://github.com/ZeeshanJan/ytclip/issues" target="_blank" rel="noopener"><i class="fa-solid fa-bug fa-xs" style="margin-right:6px;opacity:.4"></i>Issues</a></li>
+          <li><a href="https://github.com/ZeeshanJan/ytclip/blob/main/README.md" target="_blank" rel="noopener"><i class="fa-solid fa-book fa-xs" style="margin-right:6px;opacity:.4"></i>Docs</a></li>
+        </ul>
+      </div>
+
+      <div class="footer-col">
+        <h4>Deploy</h4>
+        <ul>
+          <li><a href="https://github.com/ZeeshanJan/ytclip#quick-start" target="_blank" rel="noopener"><i class="fa-brands fa-docker fa-xs" style="margin-right:6px;opacity:.4"></i>Docker</a></li>
+          <li><a href="https://github.com/ZeeshanJan/ytclip#bare-python-python-312-required" target="_blank" rel="noopener"><i class="fa-brands fa-python fa-xs" style="margin-right:6px;opacity:.4"></i>Bare Python</a></li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="footer-bottom">
+      <p class="footer-legal">ytclip is for personal use only. You are solely responsible for ensuring your use complies with YouTube's Terms of Service and applicable copyright law. The authors accept no liability.</p>
+      <span style="white-space:nowrap;opacity:.4">MIT &copy; 2026 ytclip contributors</span>
+    </div>
+  </div>
+</footer>
+
+<script>
+  /* ── Scroll-reveal ──────────────────────────────────────── */
+  const obs = new IntersectionObserver(entries => {
+    entries.forEach(e => {
+      if (e.isIntersecting) {
+        e.target.classList.add('revealed');
+        obs.unobserve(e.target);
+      }
+    });
+  }, { threshold: 0.08 });
+
+  document.querySelectorAll('.reveal').forEach(el => obs.observe(el));
+
+  /* ── FAQ icon swap ──────────────────────────────────────── */
+  document.querySelectorAll('.faq-item').forEach(item => {
+    item.addEventListener('toggle', () => {
+      const icon = item.querySelector('.faq-icon i');
+      icon.className = item.open ? 'fa-solid fa-xmark' : 'fa-solid fa-plus';
+    });
+  });
+</script>
+</body>
+</html>

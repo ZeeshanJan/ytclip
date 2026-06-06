@@ -1,0 +1,25 @@
+<div class="job-card" id="job-{{ job.id }}">
+  <div class="job-card-header">
+    <span class="job-card-url">{{ job.url[:60] }}{% if job.url|length > 60 %}…{% endif %}</span>
+    <span class="job-card-meta">{{ start_fmt }}–{{ end_fmt }} · {{ job.output_format.value.upper() }}</span>
+  </div>
+  <div id="progress-{{ job.id }}">
+    <div class="job-progress-bar">
+      <div class="job-progress-fill" style="width: 0%"></div>
+    </div>
+    <span class="job-progress-label">Queued…</span>
+  </div>
+</div>
+
+<script>
+(function () {
+  var id = '{{ job.id }}';
+  var es = new EventSource('/clips/' + id + '/progress');
+  es.onmessage = function (e) {
+    var el = document.getElementById('progress-' + id);
+    if (el) el.innerHTML = e.data;
+    if (e.data.indexOf('job-done') !== -1 || e.data.indexOf('job-error') !== -1) es.close();
+  };
+  es.onerror = function () { es.close(); };
+})();
+</script>
