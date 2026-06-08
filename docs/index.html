@@ -136,13 +136,13 @@
     .step-badge{display:inline-block;padding:2px 8px;background:var(--primary-bg);color:var(--primary);border-radius:4px;font-size:.65rem;font-weight:700;font-family:'JetBrains Mono',monospace;margin-bottom:.5rem}
 
     /* ── FEATURES ─────────────────────────────────────── */
-    .features-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1.25rem;margin-top:3rem}
-    .feat-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-m);padding:1.5rem;transition:box-shadow .2s,border-color .2s,transform .2s}
+    .features-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;margin-top:2.25rem}
+    .feat-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-m);padding:1.1rem;transition:box-shadow .2s,border-color .2s,transform .2s}
     .feat-card:hover{box-shadow:var(--shadow-m);border-color:var(--primary-bg);transform:translateY(-2px)}
-    .feat-icon{width:42px;height:42px;border-radius:10px;background:var(--primary-xl);display:flex;align-items:center;justify-content:center;margin-bottom:1rem;font-size:.95rem;color:var(--primary)}
-    .feat-card h3{font-size:.95rem;font-weight:700;letter-spacing:-.02em;margin-bottom:.375rem}
-    .feat-card p{font-size:.83rem;color:var(--muted);line-height:1.6}
-    .feat-card--wide{grid-column:1/-1;display:flex;align-items:flex-start;gap:1.5rem}
+    .feat-icon{width:36px;height:36px;border-radius:8px;background:var(--primary-xl);display:flex;align-items:center;justify-content:center;margin-bottom:.6rem;font-size:.85rem;color:var(--primary)}
+    .feat-card h3{font-size:.9rem;font-weight:700;letter-spacing:-.02em;margin-bottom:.25rem}
+    .feat-card p{font-size:.8rem;color:var(--muted);line-height:1.55}
+    .feat-card--wide{grid-column:1/-1;display:flex;align-items:flex-start;gap:1.25rem}
     .feat-card--wide .feat-icon{flex-shrink:0;margin-bottom:0}
 
     /* ── CLI ──────────────────────────────────────────── */
@@ -315,7 +315,7 @@
       <a href="https://github.com/ZeeshanJan/ytclip" target="_blank" rel="noopener" class="btn-ghost-sm">
         <i class="fa-brands fa-github"></i> GitHub
       </a>
-      <a href="https://github.com/ZeeshanJan/ytclip#quick-start" class="btn-pill">
+      <a href="https://hub.docker.com/r/zeeshanjan/ytclip" target="_blank" rel="noopener" class="btn-pill">
         Get Started <i class="fa-solid fa-arrow-right"></i>
       </a>
     </div>
@@ -354,7 +354,7 @@
     <span class="tag"><i class="fa-solid fa-lock-open"></i> Open Source</span>
     <span class="tag"><i class="fa-solid fa-scale-balanced"></i> MIT License</span>
     <span class="tag"><i class="fa-brands fa-python"></i> Python 3.12</span>
-    <span class="tag"><i class="fa-brands fa-docker"></i> Docker Ready</span>
+    <span class="tag"><i class="fa-brands fa-docker"></i> <a href="https://hub.docker.com/r/zeeshanjan/ytclip" target="_blank" rel="noopener" style="color:inherit">Docker Hub</a></span>
     <span class="tag"><i class="fa-solid fa-hard-drive"></i> Self-hosted</span>
     <span class="tag"><i class="fa-brands fa-youtube" style="color:#ff0000"></i> YouTube Shorts</span>
     <span class="tag"><i class="fa-brands fa-tiktok"></i> TikTok</span>
@@ -363,14 +363,52 @@
   </div>
 
   <div class="hero-cta">
-    <a href="https://github.com/ZeeshanJan/ytclip#quick-start" class="btn-hero">
-      <i class="fa-solid fa-download"></i> Self-Host It
+    <a href="https://hub.docker.com/r/zeeshanjan/ytclip" target="_blank" rel="noopener" class="btn-hero">
+      <i class="fa-brands fa-docker"></i> Pull from Docker Hub
     </a>
     <a href="https://github.com/ZeeshanJan/ytclip" target="_blank" rel="noopener" class="btn-hero-ghost">
       <i class="fa-brands fa-github"></i> View on GitHub
     </a>
   </div>
 </section>
+
+<!-- ── DOCKER INSTALL STRIP ──────────────────────────────────────────── -->
+<div style="max-width:780px;margin:0 auto;padding:0 2rem 3rem">
+  <div style="background:#1e2030;border-radius:var(--radius-m);overflow:hidden;box-shadow:var(--shadow-m)">
+    <div style="padding:10px 16px;background:#161724;display:flex;align-items:center;justify-content:space-between;gap:1rem">
+      <div style="display:flex;align-items:center;gap:8px;font-size:.75rem;color:#6b7280;font-family:'JetBrains Mono',monospace">
+        <i class="fa-brands fa-docker" style="color:#2496ed;font-size:.95rem"></i>
+        zeeshanjan/ytclip
+      </div>
+      <a href="https://hub.docker.com/r/zeeshanjan/ytclip" target="_blank" rel="noopener"
+         style="font-size:.68rem;font-weight:600;color:#5e81ac;font-family:'JetBrains Mono',monospace;opacity:.7;transition:opacity .15s"
+         onmouseover="this.style.opacity=1" onmouseout="this.style.opacity=.7">
+        hub.docker.com ↗
+      </a>
+    </div>
+    <div style="padding:1rem 1.25rem;font-family:'JetBrains Mono',monospace;font-size:.82rem;display:flex;flex-direction:column;gap:.5rem">
+      <div style="display:flex;gap:.5rem;align-items:center">
+        <span style="color:#4c566a;font-style:italic;user-select:none"># one-liner</span>
+      </div>
+      <div style="display:flex;gap:.5rem;flex-wrap:wrap">
+        <span style="color:#5e81ac;user-select:none">$</span>
+        <span style="color:#81a1c1">docker run</span>
+        <span style="color:#ebcb8b">-d -p 8000:8000</span>
+        <span style="color:#ebcb8b">-v ./clips:/clips</span>
+        <span style="color:#a3be8c">zeeshanjan/ytclip:latest</span>
+      </div>
+      <div style="margin-top:.25rem;display:flex;gap:.5rem;align-items:center">
+        <span style="color:#4c566a;font-style:italic;user-select:none"># or with compose</span>
+      </div>
+      <div style="display:flex;gap:.5rem;flex-wrap:wrap">
+        <span style="color:#5e81ac;user-select:none">$</span>
+        <span style="color:#81a1c1">docker compose up -d</span>
+        <span style="color:#4c566a;font-style:italic">&nbsp; # uses docker-compose.yml from the repo</span>
+      </div>
+      <div style="margin-top:.25rem;color:#a3be8c;font-size:.78rem">✓ Open <span style="color:#88c0d0">http://localhost:8000</span> — clips save to <span style="color:#88c0d0">./clips/</span></div>
+    </div>
+  </div>
+</div>
 
 <!-- ── APP PREVIEW ────────────────────────────────────────────────────── -->
 <div class="preview-section reveal">
@@ -1036,7 +1074,7 @@
         <div class="footer-badges">
           <span class="footer-badge"><i class="fa-solid fa-code-branch"></i> MIT License</span>
           <span class="footer-badge"><i class="fa-brands fa-python"></i> Python 3.12</span>
-          <span class="footer-badge"><i class="fa-brands fa-docker"></i> Docker</span>
+          <a href="https://hub.docker.com/r/zeeshanjan/ytclip" target="_blank" rel="noopener" class="footer-badge" style="color:inherit"><i class="fa-brands fa-docker"></i> Docker Hub</a>
         </div>
       </div>
 
@@ -1062,7 +1100,8 @@
       <div class="footer-col">
         <h4>Deploy</h4>
         <ul>
-          <li><a href="https://github.com/ZeeshanJan/ytclip#quick-start" target="_blank" rel="noopener"><i class="fa-brands fa-docker fa-xs" style="margin-right:6px;opacity:.4"></i>Docker</a></li>
+          <li><a href="https://hub.docker.com/r/zeeshanjan/ytclip" target="_blank" rel="noopener"><i class="fa-brands fa-docker fa-xs" style="margin-right:6px;opacity:.4"></i>Docker Hub</a></li>
+          <li><a href="https://github.com/ZeeshanJan/ytclip#quick-start" target="_blank" rel="noopener"><i class="fa-brands fa-docker fa-xs" style="margin-right:6px;opacity:.4"></i>docker-compose</a></li>
           <li><a href="https://github.com/ZeeshanJan/ytclip#bare-python-python-312-required" target="_blank" rel="noopener"><i class="fa-brands fa-python fa-xs" style="margin-right:6px;opacity:.4"></i>Bare Python</a></li>
         </ul>
       </div>

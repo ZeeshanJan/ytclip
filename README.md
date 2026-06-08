@@ -4,6 +4,10 @@
 
 No cloud. No subscription. Runs on your machine.
 
+[![Docker Hub](https://img.shields.io/docker/pulls/zeeshanjan/ytclip?style=flat-square&logo=docker&label=Docker%20Hub)](https://hub.docker.com/r/zeeshanjan/ytclip)
+[![GitHub](https://img.shields.io/github/stars/ZeeshanJan/ytclip?style=flat-square&logo=github)](https://github.com/ZeeshanJan/ytclip)
+[![MIT License](https://img.shields.io/badge/license-MIT-blue?style=flat-square)](LICENSE)
+
 ---
 
 ## Features
@@ -40,6 +44,23 @@ No cloud. No subscription. Runs on your machine.
 
 ### Docker (recommended)
 
+The pre-built image is on Docker Hub — no clone needed.
+
+**One-liner:**
+
+```bash
+docker run -d -p 8000:8000 -v ./clips:/clips --restart unless-stopped zeeshanjan/ytclip:latest
+```
+
+**docker-compose (recommended for persistent config):**
+
+```bash
+curl -O https://raw.githubusercontent.com/ZeeshanJan/ytclip/main/docker-compose.yml
+docker compose up -d
+```
+
+Or clone the repo if you want to customise the compose file:
+
 ```bash
 git clone https://github.com/ZeeshanJan/ytclip.git
 cd ytclip
@@ -47,6 +68,8 @@ docker compose up -d
 ```
 
 Open [http://localhost:8000](http://localhost:8000). Clips are saved to `./clips/`.
+
+> **Docker Hub:** [hub.docker.com/r/zeeshanjan/ytclip](https://hub.docker.com/r/zeeshanjan/ytclip)
 
 ### Bare Python (Python 3.12+ required)
 
