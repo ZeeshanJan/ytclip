@@ -355,6 +355,8 @@
     <span class="tag"><i class="fa-solid fa-scale-balanced"></i> MIT License</span>
     <span class="tag"><i class="fa-brands fa-python"></i> Python 3.12</span>
     <span class="tag"><i class="fa-brands fa-docker"></i> <a href="https://hub.docker.com/r/zeeshanjan/ytclip" target="_blank" rel="noopener" style="color:inherit">Docker Hub</a></span>
+    <span class="tag"><i class="fa-brands fa-python"></i> <a href="https://pypi.org/project/ytclip-app/" target="_blank" rel="noopener" style="color:inherit">PyPI</a></span>
+    <span class="tag"><i class="fa-solid fa-beer-mug-empty"></i> Homebrew</span>
     <span class="tag"><i class="fa-solid fa-hard-drive"></i> Self-hosted</span>
     <span class="tag"><i class="fa-brands fa-youtube" style="color:#ff0000"></i> YouTube Shorts</span>
     <span class="tag"><i class="fa-brands fa-tiktok"></i> TikTok</span>
@@ -372,41 +374,72 @@
   </div>
 </section>
 
-<!-- ── DOCKER INSTALL STRIP ──────────────────────────────────────────── -->
-<div style="max-width:780px;margin:0 auto;padding:0 2rem 3rem">
-  <div style="background:#1e2030;border-radius:var(--radius-m);overflow:hidden;box-shadow:var(--shadow-m)">
-    <div style="padding:10px 16px;background:#161724;display:flex;align-items:center;justify-content:space-between;gap:1rem">
-      <div style="display:flex;align-items:center;gap:8px;font-size:.75rem;color:#6b7280;font-family:'JetBrains Mono',monospace">
-        <i class="fa-brands fa-docker" style="color:#2496ed;font-size:.95rem"></i>
-        zeeshanjan/ytclip
+<!-- ── INSTALL STRIP ───────────────────────────────────────────────────── -->
+<div style="max-width:960px;margin:0 auto;padding:0 2rem 3rem">
+  <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:1rem">
+
+    <!-- Docker -->
+    <div style="background:#1e2030;border-radius:var(--radius-m);overflow:hidden;box-shadow:var(--shadow-m)">
+      <div style="padding:10px 16px;background:#161724;display:flex;align-items:center;justify-content:space-between;gap:.5rem">
+        <div style="display:flex;align-items:center;gap:7px;font-size:.72rem;color:#6b7280;font-family:'JetBrains Mono',monospace">
+          <i class="fa-brands fa-docker" style="color:#2496ed"></i> Docker
+        </div>
+        <span style="font-size:.6rem;font-weight:600;color:#a3be8c;background:rgba(163,190,140,.12);padding:2px 7px;border-radius:9999px">recommended</span>
       </div>
-      <a href="https://hub.docker.com/r/zeeshanjan/ytclip" target="_blank" rel="noopener"
-         style="font-size:.68rem;font-weight:600;color:#5e81ac;font-family:'JetBrains Mono',monospace;opacity:.7;transition:opacity .15s"
-         onmouseover="this.style.opacity=1" onmouseout="this.style.opacity=.7">
-        hub.docker.com ↗
-      </a>
+      <div style="padding:.85rem 1.1rem;font-family:'JetBrains Mono',monospace;font-size:.78rem;display:flex;flex-direction:column;gap:.35rem">
+        <div style="display:flex;gap:.5rem;flex-wrap:wrap">
+          <span style="color:#5e81ac;user-select:none">$</span>
+          <span style="color:#81a1c1">docker run</span>
+          <span style="color:#ebcb8b">-d -p 8000:8000</span>
+        </div>
+        <div style="padding-left:1.1rem;color:#ebcb8b">-v ./clips:/clips</div>
+        <div style="padding-left:1.1rem;color:#a3be8c">zeeshanjan/ytclip</div>
+        <div style="margin-top:.3rem;color:#a3be8c;font-size:.72rem">✓ <a href="https://hub.docker.com/r/zeeshanjan/ytclip" target="_blank" rel="noopener" style="color:#88c0d0">hub.docker.com ↗</a></div>
+      </div>
     </div>
-    <div style="padding:1rem 1.25rem;font-family:'JetBrains Mono',monospace;font-size:.82rem;display:flex;flex-direction:column;gap:.5rem">
-      <div style="display:flex;gap:.5rem;align-items:center">
-        <span style="color:#4c566a;font-style:italic;user-select:none"># one-liner</span>
+
+    <!-- Homebrew -->
+    <div style="background:#1e2030;border-radius:var(--radius-m);overflow:hidden;box-shadow:var(--shadow-m)">
+      <div style="padding:10px 16px;background:#161724;display:flex;align-items:center;gap:7px;font-size:.72rem;color:#6b7280;font-family:'JetBrains Mono',monospace">
+        <i class="fa-solid fa-beer-mug-empty" style="color:#f9c74f"></i> Homebrew — macOS / Linux
       </div>
-      <div style="display:flex;gap:.5rem;flex-wrap:wrap">
-        <span style="color:#5e81ac;user-select:none">$</span>
-        <span style="color:#81a1c1">docker run</span>
-        <span style="color:#ebcb8b">-d -p 8000:8000</span>
-        <span style="color:#ebcb8b">-v ./clips:/clips</span>
-        <span style="color:#a3be8c">zeeshanjan/ytclip:latest</span>
+      <div style="padding:.85rem 1.1rem;font-family:'JetBrains Mono',monospace;font-size:.78rem;display:flex;flex-direction:column;gap:.35rem">
+        <div style="display:flex;gap:.5rem">
+          <span style="color:#5e81ac;user-select:none">$</span>
+          <span style="color:#81a1c1">brew tap</span>
+          <span style="color:#a3be8c">ZeeshanJan/ytclip</span>
+        </div>
+        <div style="display:flex;gap:.5rem">
+          <span style="color:#5e81ac;user-select:none">$</span>
+          <span style="color:#81a1c1">brew install</span>
+          <span style="color:#a3be8c">ytclip</span>
+        </div>
+        <div style="display:flex;gap:.5rem;margin-top:.35rem">
+          <span style="color:#5e81ac;user-select:none">$</span>
+          <span style="color:#81a1c1">ytclip serve</span>
+        </div>
       </div>
-      <div style="margin-top:.25rem;display:flex;gap:.5rem;align-items:center">
-        <span style="color:#4c566a;font-style:italic;user-select:none"># or with compose</span>
-      </div>
-      <div style="display:flex;gap:.5rem;flex-wrap:wrap">
-        <span style="color:#5e81ac;user-select:none">$</span>
-        <span style="color:#81a1c1">docker compose up -d</span>
-        <span style="color:#4c566a;font-style:italic">&nbsp; # uses docker-compose.yml from the repo</span>
-      </div>
-      <div style="margin-top:.25rem;color:#a3be8c;font-size:.78rem">✓ Open <span style="color:#88c0d0">http://localhost:8000</span> — clips save to <span style="color:#88c0d0">./clips/</span></div>
     </div>
+
+    <!-- pip -->
+    <div style="background:#1e2030;border-radius:var(--radius-m);overflow:hidden;box-shadow:var(--shadow-m)">
+      <div style="padding:10px 16px;background:#161724;display:flex;align-items:center;gap:7px;font-size:.72rem;color:#6b7280;font-family:'JetBrains Mono',monospace">
+        <i class="fa-brands fa-python" style="color:#3b82f6"></i> PyPI — Python 3.12+
+      </div>
+      <div style="padding:.85rem 1.1rem;font-family:'JetBrains Mono',monospace;font-size:.78rem;display:flex;flex-direction:column;gap:.35rem">
+        <div style="display:flex;gap:.5rem">
+          <span style="color:#5e81ac;user-select:none">$</span>
+          <span style="color:#81a1c1">pip install</span>
+          <span style="color:#a3be8c">ytclip-app</span>
+        </div>
+        <div style="display:flex;gap:.5rem;margin-top:.35rem">
+          <span style="color:#5e81ac;user-select:none">$</span>
+          <span style="color:#81a1c1">ytclip serve</span>
+        </div>
+        <div style="margin-top:.3rem;color:#a3be8c;font-size:.72rem">✓ <a href="https://pypi.org/project/ytclip-app/" target="_blank" rel="noopener" style="color:#88c0d0">pypi.org ↗</a></div>
+      </div>
+    </div>
+
   </div>
 </div>
 
