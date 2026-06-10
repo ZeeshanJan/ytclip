@@ -76,7 +76,7 @@ Open [http://localhost:8000](http://localhost:8000). Clips are saved to `./clips
 Requires [ffmpeg](https://ffmpeg.org/download.html) on your `PATH` (or omit it — a static build is bundled as fallback).
 
 ```bash
-pip install ytclip
+pip install ytclip-app
 ytclip serve
 ```
 

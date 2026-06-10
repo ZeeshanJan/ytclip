@@ -10,7 +10,25 @@ from rich.console import Console
 from rich.progress import BarColumn, MofNCompleteColumn, Progress, SpinnerColumn, TaskProgressColumn, TextColumn
 from rich.table import Table
 
-app = typer.Typer(name="ytclip", help="YouTube clip creator — self-hosted, quality-first.", add_completion=False)
+app = typer.Typer(
+    name="ytclip",
+    help="YouTube clip creator — self-hosted, quality-first.",
+    add_completion=False,
+    invoke_without_command=True,
+    no_args_is_help=False,
+)
+
+
+@app.callback()
+def main(ctx: typer.Context):
+    if ctx.invoked_subcommand is None:
+        from .. import __version__
+        console.print(f"\n[bold]ytclip[/bold] [dim]v{__version__}[/dim] — YouTube clip creator\n")
+        console.print("  [cyan]ytclip serve[/cyan]      Start the web UI at [underline]http://localhost:8000[/underline]")
+        console.print("  [cyan]ytclip clip[/cyan]       Create a clip from the command line")
+        console.print("  [cyan]ytclip library[/cyan]    List saved clips")
+        console.print("  [cyan]ytclip --help[/cyan]     Full command reference")
+        console.print()
 console = Console()
 
 
