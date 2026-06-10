@@ -9,6 +9,21 @@ description = "Self-hosted YouTube clip creator"
 readme = "README.md"
 requires-python = ">=3.12"
 license = {text = "MIT"}
+authors = [
+    {name = "Zeeshan Jan", email = "hello@zeeshan.uk"},
+]
+keywords = ["youtube", "clip", "downloader", "self-hosted", "ffmpeg", "yt-dlp"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Environment :: Web Environment",
+    "Intended Audience :: End Users/Desktop",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Multimedia :: Video",
+    "Topic :: Internet",
+]
 dependencies = [
     "fastapi>=0.115.0",
     "uvicorn[standard]>=0.30.0",
@@ -32,6 +47,11 @@ dev = [
     "anyio[trio]>=4.0.0",
     "httpx>=0.27.0",
 ]
+
+[project.urls]
+Homepage = "https://ytclip.xyz"
+Repository = "https://github.com/ZeeshanJan/ytclip"
+"Bug Tracker" = "https://github.com/ZeeshanJan/ytclip/issues"
 
 [project.scripts]
 ytclip = "ytclip.cli.main:app"
