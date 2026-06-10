@@ -71,6 +71,14 @@ Open [http://localhost:8000](http://localhost:8000). Clips are saved to `./clips
 
 > **Docker Hub:** [hub.docker.com/r/zeeshanjan/ytclip](https://hub.docker.com/r/zeeshanjan/ytclip)
 
+### Homebrew (macOS / Linux)
+
+```bash
+brew tap ZeeshanJan/ytclip
+brew install ytclip
+ytclip serve
+```
+
 ### Bare Python (Python 3.12+ required)
 
 Requires [ffmpeg](https://ffmpeg.org/download.html) on your `PATH` (or omit it — a static build is bundled as fallback).
